@@ -33,7 +33,7 @@ export default async function RootLayout({
       <body className={`${inter.className} antialiased bg-white flex flex-col min-h-screen`}>
         
         {/* YOUR ORIGINAL HEADER - FULLY RESTORED */}
-        <nav className="sticky top-0 z-[100] w-full border-b border-slate-100 bg-white/70 backdrop-blur-xl">
+        <nav className="sticky top-0 z-100 w-full border-b border-slate-100 bg-white/70 backdrop-blur-xl">
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-8">
             
             {/* 1. Brand - Compact */}
@@ -43,7 +43,7 @@ export default async function RootLayout({
               </Link>
               
               {/* 2. Vertical Divider + Tagline */}
-              <div className="hidden lg:flex items-center gap-4">
+              <div className="lg:flex items-center gap-4">
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none">
                   The Hudson Valley’s premier one-stop database for movie and photography props
                 </p>
