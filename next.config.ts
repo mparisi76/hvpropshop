@@ -3,9 +3,8 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'http', // Use 'https' if your server has SSL
-        hostname: '5.161.59.228', // Your Hetzner IP
-        port: '8055',
+        protocol: 'https', // Use 'https' if your server has SSL
+        hostname: 'admin.hvpropshop.com', // Your Hetzner IP
         pathname: '/assets/**',
       },
     ],
