@@ -53,7 +53,9 @@ export default async function RootLayout({
             {/* 3. Navigation Actions */}
             <div className="flex items-center gap-2">
               <div className="hidden sm:block">
-                <SearchInput />
+                <Suspense fallback={<div className="w-60 h-9 bg-slate-100 rounded-full animate-pulse" />}>
+                  <SearchInput />
+                </Suspense>
               </div>
               <Link 
                 href="/" 
