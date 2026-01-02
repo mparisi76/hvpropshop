@@ -5,6 +5,8 @@ import { readItems } from '@directus/sdk';
 import PropCard from '@/components/PropCard';
 import { formatCategory } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 // 1. Define the shared interface
 interface Prop {
   id: string | number;
