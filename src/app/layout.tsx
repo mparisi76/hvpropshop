@@ -42,9 +42,9 @@ export default async function RootLayout({
                 HV<span className="text-blue-600">PROPSHOP</span>
               </Link>
               
-              {/* 2. Vertical Divider + Tagline */}
-              <div className="lg:flex items-center gap-4">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+              {/* Tagline: Visible on mobile (text-xs), larger on desktop (text-[11px]) */}
+              <div className="flex items-center gap-4">
+                <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none max-w-[200px] md:max-w-none">
                   The Hudson Valley’s premier one-stop database for movie and photography props
                 </p>
               </div>
