@@ -44,21 +44,9 @@ export default async function RootLayout({
               
               {/* Tagline: Visible on mobile (text-xs), larger on desktop (text-[11px]) */}
               <div className="flex items-center gap-4">
-                <p 
-  style={{ 
-    display: 'block', 
-    visibility: 'visible', 
-    color: '#64748b', // slate-500
-    fontSize: '10px',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    lineHeight: '1.25',
-    maxWidth: '280px'
-  }}
->
-  The Hudson Valley’s premier one-stop database for movie and photography props
-</p>
+                <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none max-w-50 md:max-w-none">
+                  The Hudson Valley’s premier one-stop database for movie and photography props
+                </p>
               </div>
             </div>
 
