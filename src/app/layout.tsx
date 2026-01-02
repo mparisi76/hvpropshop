@@ -37,15 +37,16 @@ export default async function RootLayout({
           <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between gap-8">
             
             {/* 1. Brand & Tagline Container */}
-            <div className="flex flex-col justify-center shrink-0 py-2">
-              <Link href="/" className="text-xl font-black tracking-tighter hover:text-blue-600 transition leading-none">
+            <div className="flex flex-col justify-center shrink-0 h-full py-2 min-w-[200px]">
+              <Link href="/" className="text-xl font-black tracking-tighter hover:text-blue-600 transition leading-none block">
                 HV<span className="text-blue-600">PROPSHOP</span>
               </Link>
               
-              {/* The Tagline - Forced to block and given a specific height/margin */}
-              <div className="block mt-1">
-                <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight max-w-75">
-                  The Hudson Valley’s premier one-stop database for movie and photography props
+              {/* The Tagline - Using !block to override any hidden state and ensuring text is visible */}
+              <div className="mt-1.5 !block">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.1em] leading-tight">
+                  The Hudson Valley’s premier one-stop database <br className="hidden sm:block" />
+                  for movie and photography props
                 </p>
               </div>
             </div>
