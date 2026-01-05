@@ -4,7 +4,7 @@ import CategorySidebar from '@/components/CategorySidebar';
 import PropCard from '@/components/PropCard';
 import { Category, Prop } from '@/types';
 import { getCategoryTree } from '@/lib/utils';
-import MobileFilters from '@/components/MobileFilters';
+import MobileCategoryBar from '@/components/MobileCategoryBar';
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ category?: string, search?: string }> }) {
   const params = await searchParams;
@@ -68,7 +68,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
         <main className="flex-1">
           {/* 2. Mobile Filter Button (Hidden on desktop) */}
-          <MobileFilters tree={categoryTree} selectedSlug={selectedSlug} />
+          <MobileCategoryBar tree={categoryTree} selectedSlug={selectedSlug} />
 
           {/* 3. The Grid (Responsive Columns) */}
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 md:gap-8">
