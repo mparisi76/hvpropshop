@@ -29,7 +29,7 @@ function SearchField() {
         type="text"
         name="search"
         placeholder="SEARCH THE VAULT..."
-        className="w-full bg-slate-100 border-none rounded-full px-5 py-2.5 text-[10px] font-black uppercase tracking-widest outline-none"
+        className="w-full bg-slate-100 border-none rounded-full px-5 py-2.5 text-[10px] font-black tracking-widest outline-none"
       />
     </form>
   );

@@ -1,29 +1,19 @@
 import { formatCategory } from '@/lib/utils';
 import Link from 'next/link';
-import Image from 'next/image'; // Import this
-
-interface Prop {
-  id: string | number;
-  status?: string;
-  title?: string;
-  name?: string;
-  thumbnail?: string;
-  category: string;
-  price: string | number;
-}
+import Image from 'next/image';
+import { Prop } from '@/types';
 
 export default function PropCard({ item }: { item: Prop }) {
   const isRented = item.status === 'rented';
-  const displayTitle = item.title || item.name || 'Untitled Prop';
+  const displayTitle = item.name || 'Untitled Prop';
 
   return (
     <Link href={`/props/${item.id}`} className="group relative block overflow-hidden rounded-2xl bg-slate-200 aspect-square antialiased">
-      {/* 1. Optimized Next.js Image */}
       {item.thumbnail ? (
         <Image 
           src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${item.thumbnail}?width=600&height=600&fit=cover`} 
           alt={displayTitle}
-          fill // This tells it to fill the 'aspect-square' container
+          fill
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
           className="object-cover group-hover:scale-110 transition duration-700 ease-in-out"
         />
@@ -38,7 +28,7 @@ export default function PropCard({ item }: { item: Prop }) {
       {/* 3. CATEGORY PILL */}
       <div className="absolute top-3 right-3 z-20">
         <span className="inline-block px-2.5 py-1 rounded-md bg-black/50 backdrop-blur-md text-[9px] font-black uppercase tracking-widest text-gray-100 border border-white/10 shadow-lg">
-          {formatCategory(item.category)}
+          {formatCategory(item.category?.name || "")}
         </span>
       </div>
 
