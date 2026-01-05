@@ -2,9 +2,9 @@ import { readItems } from '@directus/sdk';
 import directus from '@/lib/directus';
 import CategorySidebar from '@/components/CategorySidebar';
 import PropCard from '@/components/PropCard';
-import Link from 'next/link';
 import { Category, Prop } from '@/types';
 import { getCategoryTree } from '@/lib/utils';
+import MobileFilters from '@/components/MobileFilters';
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ category?: string, search?: string }> }) {
   const params = await searchParams;
@@ -53,25 +53,32 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   const categoryTree = getCategoryTree(categories, allItems);
 
+ // Inside src/app/page.tsx
+
   return (
-    <div className="flex gap-10 max-w-7xl mx-auto p-10 font-sans">
-      <div className="hidden lg:block w-64 shrink-0">
-        <CategorySidebar tree={categoryTree} selectedSlug={selectedSlug} />
-      </div>
-      
-      <div className="flex-1">
-        {filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-10">
+      <div className="flex flex-col lg:flex-row gap-10">
+        
+        {/* 1. Desktop Sidebar (Hidden on mobile) */}
+        <aside className="hidden lg:block w-64 shrink-0">
+          <div className="sticky top-24">
+            <CategorySidebar tree={categoryTree} selectedSlug={selectedSlug} />
+          </div>
+        </aside>
+
+        <main className="flex-1">
+          {/* 2. Mobile Filter Button (Hidden on desktop) */}
+          <MobileFilters tree={categoryTree} selectedSlug={selectedSlug} />
+
+          {/* 3. The Grid (Responsive Columns) */}
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-8 md:gap-8">
             {filteredItems.map(item => (
               <PropCard key={item.id} item={item} />
             ))}
           </div>
-        ) : (
-          <div className="text-center py-20 border-2 border-dashed rounded-xl">
-            <p className="text-slate-400">No items found in {selectedSlug}</p>
-            <Link href="/" className="text-blue-600 underline mt-2 inline-block">Clear filters</Link>
-          </div>
-        )}
+          
+          {/* ... empty states ... */}
+        </main>
       </div>
     </div>
   );
