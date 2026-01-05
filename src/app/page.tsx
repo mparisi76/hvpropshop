@@ -55,14 +55,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="flex gap-10 max-w-7xl mx-auto p-10 font-sans">
-      <CategorySidebar 
-        tree={categoryTree} 
-        selectedSlug={selectedSlug} 
-      />
+      <div className="hidden lg:block w-64 shrink-0">
+        <CategorySidebar tree={categoryTree} selectedSlug={selectedSlug} />
+      </div>
       
       <div className="flex-1">
         {filteredItems.length > 0 ? (
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map(item => (
               <PropCard key={item.id} item={item} />
             ))}
