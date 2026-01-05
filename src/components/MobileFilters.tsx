@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import CategorySidebar from './CategorySidebar';
-import { CategoryTree } from '@/types'; // Import your actual type
+import { useRouter } from 'next/navigation';
+import { CategoryTree } from '@/types';
 
 interface MobileFiltersProps {
   tree: CategoryTree;
@@ -10,49 +9,51 @@ interface MobileFiltersProps {
 }
 
 export default function MobileFilters({ tree, selectedSlug }: MobileFiltersProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+
+  // Find the active name to show on the button
+  // const activeCategory = Object.values(tree).flatMap(p => [p, ...Object.values(p.children)])
+  //   .find(c => c.slug === selectedSlug);
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const slug = e.target.value;
+    if (slug === 'all') {
+      router.push('/');
+    } else {
+      router.push(`/?category=${slug}`);
+    }
+  };
 
   return (
     <div className="lg:hidden mb-6 px-4">
-      <button 
-        onClick={() => setIsOpen(true)}
-        className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase text-[10px] tracking-[0.2em] flex items-center justify-center gap-2"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-        </svg>
-        Browse Categories {selectedSlug && `(1)`}
-      </button>
-
-      {/* Full Screen Overlay */}
-      {isOpen && (
-        <div className="fixed inset-0 z-100 bg-white flex flex-col">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <span className="font-black uppercase tracking-tighter text-xl">
-              HV<span className="text-blue-600">PROPSHOP</span>
-            </span>
-            <button 
-              onClick={() => setIsOpen(false)} 
-              className="text-xs font-bold uppercase tracking-widest bg-slate-100 px-4 py-2 rounded-full"
-            >
-              Close
-            </button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-6 pb-32">
-            <CategorySidebar tree={tree} selectedSlug={selectedSlug} />
-          </div>
-          
-          <div className="p-6 border-t border-slate-100 bg-white shadow-[0_-10px_40px_rgba(0,0,0,0,0.05)]">
-            <button 
-              onClick={() => setIsOpen(false)}
-              className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold uppercase text-xs tracking-widest"
-            >
-              Show Results
-            </button>
-          </div>
+      <div className="relative">
+        <label htmlFor="category-select" className="sr-only">Select Category</label>
+        <select
+          id="category-select"
+          value={selectedSlug || 'all'}
+          onChange={handleChange}
+          className="w-full bg-slate-100 border-none rounded-xl px-5 py-4 text-sm font-bold uppercase tracking-widest appearance-none focus:ring-2 focus:ring-blue-600 outline-none"
+        >
+          <option value="all">All Inventory</option>
+          {Object.values(tree).sort((a, b) => a.name.localeCompare(b.name)).map((parent) => (
+            <optgroup key={parent.slug} label={parent.name.toUpperCase()}>
+              <option value={parent.slug}>{parent.name} (All)</option>
+              {Object.values(parent.children).sort((a, b) => a.name.localeCompare(b.name)).map((child) => (
+                <option key={child.slug} value={child.slug}>
+                  — {child.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        
+        {/* Custom Chevron Icon */}
+        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
+          <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
-      )}
+      </div>
     </div>
   );
 }
