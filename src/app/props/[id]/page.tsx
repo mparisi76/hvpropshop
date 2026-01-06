@@ -6,7 +6,7 @@ import PropCard from '@/components/PropCard';
 import { formatCategory } from '@/lib/utils';
 import { GalleryItem, Prop } from '@/types';
 import { notFound } from 'next/navigation';
-import ShareButton from '@/components/ShareButton';
+import InquirySection from '@/components/InquirySection';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -104,13 +104,7 @@ export default async function PropDetail({ params }: { params: Promise<{ id: str
             </div>
 
             {/* Action Buttons Section */}
-            <div className="mt-10 space-y-3">
-              <button className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-blue-600 transition-all active:scale-[0.98] shadow-2xl shadow-slate-200 cursor-pointer">
-                Check Availability
-              </button>
-              
-              <ShareButton />
-            </div>
+            <InquirySection item={item} />
           </div>
 
           {/* Related Items Section */}
