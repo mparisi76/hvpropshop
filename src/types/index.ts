@@ -48,6 +48,6 @@ export interface CategoryTree {
   };
 }
 
-interface GalleryItem {
+export interface GalleryItem {
   directus_files_id: string;
 }
