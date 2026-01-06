@@ -11,10 +11,13 @@ import ShareButton from '@/components/ShareButton';
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const item = await directus.request(readItem('props', id, { fields: ['name', 'description', 'thumbnail'] }));
+  const plainDescription = item.description 
+  ? item.description.replace(/<[^>]*>?/gm, '').slice(0, 150)
+  : `Rent our ${item.name}. High-quality specialty props available for film, television, and event production. Contact us for availability and quotes.`;
 
   return {
-    title: `${item.name} | The Prop Vault`,
-    description: item.description?.replace(/<[^>]*>?/gm, '').slice(0, 160), // Strip HTML for meta tag
+    title: `${item.name} | Hudson Valley Prop Shop | Prop Database`,
+    description: plainDescription,
     openGraph: {
       images: [`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${item.thumbnail}?width=1200&height=630&fit=cover`],
     },
