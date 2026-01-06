@@ -19,7 +19,7 @@ export default function ShareButton() {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center justify-center gap-2 w-full py-4 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-slate-50 active:scale-[0.98] cursor-pointer"
+      className="flex items-center justify-center gap-2 w-full py-4 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:bg-slate-50 active:scale-[0.98]"
     >
       {copied ? (
         <span className="flex items-center gap-2 text-green-600">

@@ -49,3 +49,14 @@ body {
     }
   }
 }
+
+@layer base {
+  button {
+    @apply cursor-pointer;
+  }
+  
+  /* Ensure disabled buttons show the 'not-allowed' cursor instead */
+  button:disabled {
+    @apply cursor-not-allowed;
+  }
+}

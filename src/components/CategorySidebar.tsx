@@ -67,7 +67,7 @@ export default function CategorySidebar({ tree, selectedSlug }: { tree: Category
 							</Link>
 
 							{hasChildren && (
-								<button onClick={() => toggleSection(parent.slug)} className="p-1 hover:bg-slate-50 rounded cursor-pointer">
+								<button onClick={() => toggleSection(parent.slug)} className="p-1 hover:bg-slate-50 rounded">
 									<svg
 										className={`w-3 h-3 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
 										fill="none"
