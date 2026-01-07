@@ -8,28 +8,30 @@ interface PropFeedProps {
   initialItems: Prop[];
   category?: string;
   search?: string;
+  totalCount: number;
 }
 
-export default function PropFeed({ initialItems, category, search }: PropFeedProps) {
+export default function PropFeed({ initialItems, category, search, totalCount }: PropFeedProps) {
   const [items, setItems] = useState<Prop[]>(initialItems);
   const [offset, setOffset] = useState(initialItems.length);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(initialItems.length >= 12);
+
+  // Derived state: We have more if our current list is shorter than the total vault count
+  const hasMore = items.length < totalCount;
 
   const loadMore = async () => {
+    if (loading) return;
     setLoading(true);
+    
     try {
       const response = await fetch(
         `/api/props?offset=${offset}&category=${category || ''}&search=${search || ''}`
       );
       const nextItems = await response.json();
       
-      if (nextItems.length === 0) {
-        setHasMore(false);
-      } else {
+      if (nextItems.length > 0) {
         setItems(prev => [...prev, ...nextItems]);
         setOffset(prev => prev + nextItems.length);
-        if (nextItems.length < 12) setHasMore(false);
       }
     } catch (e) {
       console.error("Load more error:", e);
@@ -38,22 +40,28 @@ export default function PropFeed({ initialItems, category, search }: PropFeedPro
     }
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <div className="flex flex-col gap-16">
+    <div className="flex flex-col gap-12 lg:gap-16">
+      {/* Grid Layout */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-10 md:gap-10">
         {items.map((item, index) => (
           <div 
             key={`${item.id}-${index}`} 
             className="animate-fade-in-up"
-            style={{ animationDelay: `${(index % 12) * 50}ms` }} // Staggered entry
+            style={{ animationDelay: `${(index % 12) * 50}ms` }} 
           >
             <PropCard item={item} />
           </div>
         ))}
       </div>
 
-      {hasMore && (
-        <div className="flex justify-center pb-20">
+      {/* Pagination Footer */}
+      <div className="flex justify-center pb-20">
+        {hasMore ? (
           <button
             onClick={loadMore}
             disabled={loading}
@@ -71,8 +79,29 @@ export default function PropFeed({ initialItems, category, search }: PropFeedPro
               'Load More Inventory'
             )}
           </button>
-        </div>
-      )}
+        ) : totalCount > 12 ? (
+          /* Only show the "End of Vault" footer if the user actually 
+             had more than one page of content to scroll through. 
+          */
+          <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="h-px w-24 bg-linear-to-r from-transparent via-slate-200 to-transparent" />
+            
+            <div className="text-center">
+              <p className="text-slate-400 font-serif italic text-sm">
+                You’ve reached the end
+              </p>
+              <button 
+                onClick={scrollToTop}
+                className="mt-4 text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold hover:text-blue-600 transition-colors"
+              >
+                Back to Top ↑
+              </button>
+            </div>
+
+            <div className="h-px w-24 bg-linear-to-r from-transparent via-slate-200 to-transparent" />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

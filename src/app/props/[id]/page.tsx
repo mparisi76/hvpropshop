@@ -35,7 +35,9 @@ export default async function PropDetail({ params }: { params: Promise<{ id: str
         'thumbnail',
         // Added 'id' here so we can use it for the relatedItems filter
         { category: ['id', 'name', 'slug', { parent: ['name', 'slug'] }] },
-        { photo_gallery: ['directus_files_id'] }
+        { photo_gallery: ['directus_files_id'] },
+        'vendor.email',
+        'vendor.first_name'
       ]
     })
   );

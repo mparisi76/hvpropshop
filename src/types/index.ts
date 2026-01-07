@@ -26,6 +26,10 @@ export interface Prop {
       slug: string;
     } | null;
   } | null;
+	vendor?: {
+    first_name: string;
+    email: string;
+  };
 }
 
 export interface TreeBranch {

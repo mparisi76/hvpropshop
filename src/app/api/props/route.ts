@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import directus from '@/lib/directus';
 import { readItems } from '@directus/sdk';
+import { Prop } from '@/types';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -8,7 +9,11 @@ export async function GET(request: Request) {
   const category = searchParams.get('category');
   const search = searchParams.get('search');
 
-  const andConditions = [];
+  // Using Record<string, unknown> avoids the 'any' linter error 
+  // while still allowing the flexible structure Directus filters need.
+  const andConditions: Record<string, unknown>[] = [
+    { status: { _eq: 'published' } }
+  ];
 
   if (category) {
     andConditions.push({
@@ -29,9 +34,20 @@ export async function GET(request: Request) {
   }
 
   try {
-    const items = await directus.request(readItems('props', {
-      fields: ['id', 'name', 'price', 'thumbnail', 'description', { category: ['name', 'slug'] }],
-      filter: andConditions.length > 0 ? { _and: andConditions } : {},
+    // We type the request with <Prop[]> and remove 'as any' from fields.
+    // If the linter complains about fields, we cast to 'const' to 
+    // tell TS the array structure won't change.
+    const items = await directus.request<Prop[]>(readItems('props', {
+      fields: [
+        'id', 
+        'name', 
+        'price', 
+        'thumbnail', 
+        'description', 
+        'status',
+        { category: ['id', 'name', 'slug', { parent: ['id', 'name', 'slug'] }] }
+      ] as const, 
+      filter: { _and: andConditions },
       limit: 12,
       offset: offset,
       sort: ['-date_created']

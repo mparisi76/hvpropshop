@@ -1,16 +1,19 @@
-import type { Metadata } from "next";
+// import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import { Suspense } from "react";
 import SearchInput from "@/components/SearchInput";
+import type { Viewport } from 'next'
+ 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1, // Prevents auto-zoom on input focus in iOS
+  userScalable: false,
+}
 
 const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Prop Vault | Premium Rentals",
-  description: "High-end props for film and photography",
-};
 
 export default async function RootLayout({
   children,
@@ -52,12 +55,12 @@ export default async function RootLayout({
               >
                 Catalog
               </Link>
-              <Link 
-                href="#" 
-                className="text-[11px] font-black uppercase tracking-widest bg-slate-900 text-white px-5 py-2.5 rounded-full hover:bg-blue-600 transition shadow-sm"
+              <a
+                href="mailto:hudsonvalleypropshop@gmail.com?subject=HV Prop Shop Inquiry"
+                className="text-[11px] font-black uppercase tracking-widest px-4 py-2 text-slate-600 hover:text-black transition"
               >
                 Contact
-              </Link>
+              </a>
             </div>
           </div>
         </nav>

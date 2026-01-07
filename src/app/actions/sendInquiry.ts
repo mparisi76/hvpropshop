@@ -2,8 +2,9 @@
 
 import { Resend } from 'resend';
 import { Prop } from '@/types';
+import { createItem } from '@directus/sdk';
+import directus from '@/lib/directus';
 
-// Initialize Resend with your API Key (Add this to your .env file)
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export interface ActionState {
@@ -22,11 +23,25 @@ export async function sendInquiry(
   const end = formData.get('end') as string;
   const notes = formData.get('notes') as string;
 
+	const vendorEmail = item.vendor?.email;
+  const vendorName = item.vendor?.first_name;
+
+  const payload = {
+    item_name: item.name,
+    customer_name: formData.get('name') as string,
+    customer_email: formData.get('email') as string,
+    vendor_email: item.vendor?.email,
+    message: formData.get('notes') as string,
+  };
+
+	await directus.request(createItem('inquiries', payload));
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { data, error } = await resend.emails.send({
       from: 'Prop Vault <onboarding@hvpropshop.com>', // You can change this once you verify a domain
-      to: ['mattlparisi@gmail.com'], // Put your email here!
+      to: vendorEmail || 'hudsonvalleypropshop@gmail.com',
+			replyTo: email,
       subject: `New Inquiry: ${item.name}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
@@ -40,6 +55,8 @@ export async function sendInquiry(
         </div>
       `,
     });
+
+		console.log(`Sending inquiry to vendor: ${vendorName} at ${vendorEmail}`);
 
     if (error) {
       console.error('Resend Error:', error);
