@@ -12,8 +12,8 @@ export default function MobileCategoryBar({ tree, selectedSlug }: MobileCategory
   const sortedParents = Object.values(tree).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="lg:hidden sticky top-16 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 -mx-4 px-4">
-      <div className="flex items-center gap-2 overflow-x-auto py-4 no-scrollbar">
+    <div className="sticky top-27 z-20 bg-white py-2 -mx-4 px-4 md:mx-0 md:px-0 border-b border-slate-100">
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
         {/* "All" Pill */}
         <Link
           href="/"

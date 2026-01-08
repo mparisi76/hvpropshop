@@ -26,10 +26,18 @@ export interface Prop {
       slug: string;
     } | null;
   } | null;
-	vendor?: {
-    first_name: string;
+  user_created: {
     email: string;
+    first_name?: string;
+    last_name?: string;
+    shop_name?: string;
+    city?: string;
+    state?: string;
+    phone?: string;
   };
+  dimensions?: string;
+  quantity_available: number;
+  condition?: string;
 }
 
 export interface TreeBranch {

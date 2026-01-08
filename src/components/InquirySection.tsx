@@ -56,9 +56,9 @@ function InquiryFormContent({ item, onClose }: { item: Prop, onClose: () => void
         <p className="text-slate-400 text-[10px] mt-2 uppercase tracking-widest font-bold">
           Item: <span className="text-slate-900 underline decoration-blue-600/30">{item.name}</span>
         </p>
-        {item.vendor?.first_name && (
+        {item.user_created?.first_name && (
           <p className="text-slate-400 text-[10px] mt-1 uppercase tracking-widest font-bold">
-            Vendor: <span className="text-slate-900">{item.vendor.first_name}</span>
+            Vendor: <span className="text-slate-900">{item.user_created.first_name}</span>
           </p>
         )}
       </div>

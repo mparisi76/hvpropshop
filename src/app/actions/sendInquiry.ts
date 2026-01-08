@@ -23,14 +23,14 @@ export async function sendInquiry(
   const end = formData.get('end') as string;
   const notes = formData.get('notes') as string;
 
-	const vendorEmail = item.vendor?.email;
-  const vendorName = item.vendor?.first_name;
+	const vendorEmail = item.user_created.email;
+  const vendorName = item.user_created?.first_name;
 
   const payload = {
     item_name: item.name,
     customer_name: formData.get('name') as string,
     customer_email: formData.get('email') as string,
-    vendor_email: item.vendor?.email,
+    vendor_email: item.user_created?.email,
     message: formData.get('notes') as string,
   };
 
