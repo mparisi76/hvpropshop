@@ -1,9 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 
-const PLACEHOLDER_IMAGE = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjhmOWZhIi8+PHBhdGggZD0iTTQwMCAyODB2NDBtLTIwLTIwaDQwIiBzdHJva2U9IiNlMmU4ZjAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+";
+const PLACEHOLDER_IMAGE =
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjhmOWZhIi8+PHBhdGggZD0iTTQwMCAyODB2NDBtLTIwLTIwaDQwIiBzdHJva2U9IiNlMmU4ZjAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+";
 
 export default function Gallery({ images }: { images: string[] }) {
   // 1. All State and Refs at the very top
@@ -23,7 +24,7 @@ export default function Gallery({ images }: { images: string[] }) {
   useEffect(() => {
     // Check if the image is already in the browser cache
     if (mainImageRef.current?.complete) {
-      // requestAnimationFrame tells the browser: 
+      // requestAnimationFrame tells the browser:
       // "Do this as soon as you're done with the current render"
       requestAnimationFrame(() => {
         setIsLoaded(true);
@@ -34,15 +35,14 @@ export default function Gallery({ images }: { images: string[] }) {
   // 4. Early return ONLY after all hooks are declared
   if (validImages.length === 0) return null;
 
-  const mainImageUrl = mainHasError 
-    ? PLACEHOLDER_IMAGE 
+  const mainImageUrl = mainHasError
+    ? PLACEHOLDER_IMAGE
     : `${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${active}?quality=80&format=webp`;
 
   return (
     <div className="flex flex-col gap-4">
       {/* Main Feature Stage */}
       <div className="relative aspect-4/3 overflow-hidden rounded-3xl bg-[#f8f9fa] border border-slate-200 flex items-center justify-center">
-        
         {/* Spinner */}
         {!isLoaded && !mainHasError && (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-50 z-10">
@@ -50,15 +50,15 @@ export default function Gallery({ images }: { images: string[] }) {
           </div>
         )}
 
-        <img 
+        <img
           ref={mainImageRef}
-          src={mainImageUrl} 
-          alt='Prop Gallery'
+          src={mainImageUrl}
+          alt="Prop Gallery"
           onLoad={() => setIsLoaded(true)}
           onError={() => setMainHasError(true)}
           className={`
             w-full h-full object-contain p-8 transition-all duration-500 ease-out
-            ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+            ${isLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"}
           `}
         />
       </div>
@@ -67,19 +67,19 @@ export default function Gallery({ images }: { images: string[] }) {
       {validImages.length > 1 && (
         <div className="flex gap-3 overflow-x-auto py-2 no-scrollbar">
           {validImages.map((id) => (
-            <button 
+            <button
               key={id}
               onClick={() => {
                 if (active !== id) {
-                  setIsLoaded(false); 
+                  setIsLoaded(false);
                   setMainHasError(false);
                   setSelectedId(id);
                 }
               }}
               className={`relative shrink-0 w-20 h-20 rounded-xl overflow-hidden transition-all duration-300 ${
-                active === id 
-                  ? 'ring-2 ring-blue-600 ring-offset-2 scale-90' 
-                  : 'opacity-50 hover:opacity-100 border border-slate-200'
+                active === id
+                  ? "ring-2 ring-blue-600 ring-offset-2 scale-90"
+                  : "opacity-50 hover:opacity-100 border border-slate-200"
               }`}
             >
               <img
@@ -88,8 +88,8 @@ export default function Gallery({ images }: { images: string[] }) {
                 alt="Thumbnail"
                 loading="lazy"
                 onError={(e) => {
-                   e.currentTarget.src = PLACEHOLDER_IMAGE;
-                   e.currentTarget.onerror = null;
+                  e.currentTarget.src = PLACEHOLDER_IMAGE;
+                  e.currentTarget.onerror = null;
                 }}
               />
             </button>

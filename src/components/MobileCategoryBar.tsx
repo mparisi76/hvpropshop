@@ -1,15 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { CategoryTree } from '@/types';
+import Link from "next/link";
+import { CategoryTree } from "@/types";
 
 interface MobileCategoryBarProps {
   tree: CategoryTree;
   selectedSlug?: string;
 }
 
-export default function MobileCategoryBar({ tree, selectedSlug }: MobileCategoryBarProps) {
-  const sortedParents = Object.values(tree).sort((a, b) => a.name.localeCompare(b.name));
+export default function MobileCategoryBar({
+  tree,
+  selectedSlug,
+}: MobileCategoryBarProps) {
+  const sortedParents = Object.values(tree).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
 
   return (
     <div className="sticky top-27 z-20 bg-white py-2 -mx-4 px-4 md:mx-0 md:px-0 border-b border-slate-100">
@@ -18,9 +23,9 @@ export default function MobileCategoryBar({ tree, selectedSlug }: MobileCategory
         <Link
           href="/"
           className={`whitespace-nowrap px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border transition-all duration-200 ${
-            !selectedSlug 
-              ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
-              : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+            !selectedSlug
+              ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+              : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
           }`}
         >
           All
@@ -28,8 +33,9 @@ export default function MobileCategoryBar({ tree, selectedSlug }: MobileCategory
 
         {/* Parent Pills */}
         {sortedParents.map((parent) => {
-          const isActive = selectedSlug === parent.slug || 
-                           Object.values(parent.children).some(c => c.slug === selectedSlug);
+          const isActive =
+            selectedSlug === parent.slug ||
+            Object.values(parent.children).some((c) => c.slug === selectedSlug);
 
           return (
             <Link
@@ -37,8 +43,8 @@ export default function MobileCategoryBar({ tree, selectedSlug }: MobileCategory
               href={`/?category=${parent.slug}`}
               className={`whitespace-nowrap px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border transition-all duration-200 ${
                 isActive
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
-                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                  : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
               }`}
             >
               {parent.name}

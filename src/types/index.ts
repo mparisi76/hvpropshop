@@ -13,16 +13,17 @@ export interface Prop {
   name: string;
   price: number;
   thumbnail: string;
-	status?: string;
-	description?: string;
+  availability?: string;
+  status?: string;
+  description?: string;
   photo_gallery?: GalleryItem[];
   category: {
     id: string | number;
-		name: string;
+    name: string;
     slug: string;
     parent: {
       id: string | number;
-			name: string;
+      name: string;
       slug: string;
     } | null;
   } | null;

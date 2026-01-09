@@ -5,7 +5,7 @@ export default function Loading() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         {/* Left Side: Large Image Placeholder */}
         <div className="lg:col-span-7 aspect-4/3 bg-slate-100 rounded-2xl" />
-        
+
         {/* Right Side: Text Placeholders */}
         <div className="lg:col-span-5 space-y-6">
           <div className="h-4 w-24 bg-slate-100 rounded-full" />

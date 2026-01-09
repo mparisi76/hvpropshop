@@ -1,30 +1,35 @@
-import { formatCategory } from '@/lib/utils';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Prop } from '@/types';
+import { formatCategory } from "@/lib/utils";
+import Link from "next/link";
+import Image from "next/image";
+import { Prop } from "@/types";
 
 export default function PropCard({ item }: { item: Prop }) {
-  const isRented = item.status === 'rented';
-  const displayTitle = item.name || 'Untitled Prop';
+  const isRented = item.availability === "rented";
+  const displayTitle = item.name || "Untitled Prop";
 
   return (
-    <Link href={`/props/${item.id}`} className="group relative block overflow-hidden rounded-2xl bg-slate-200 aspect-square antialiased">
+    <Link
+      href={`/props/${item.id}`}
+      className="group relative block overflow-hidden rounded-2xl bg-slate-200 aspect-square antialiased"
+    >
       {item.thumbnail ? (
-        <Image 
-          src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${item.thumbnail}?width=600&height=600&fit=cover`} 
+        <Image
+          src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${item.thumbnail}?width=600&height=600&fit=cover`}
           alt={displayTitle}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
           className="object-cover group-hover:scale-110 transition duration-700 ease-in-out"
         />
       ) : (
-        <div className="absolute inset-0 bg-slate-300 flex items-center justify-center text-slate-500 text-xs">No Image</div>
+        <div className="absolute inset-0 bg-slate-300 flex items-center justify-center text-slate-500 text-xs">
+          No Image
+        </div>
       )}
-      
+
       {/* 2. The Scrim (Overlay) */}
       {/* Note: Added z-index classes to ensure text stays on top of the 'fill' image */}
       <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity z-10" />
-      
+
       {/* 3. CATEGORY PILL */}
       <div className="absolute top-3 right-3 z-20">
         <span className="inline-block px-2.5 py-1 rounded-md bg-black/50 backdrop-blur-md text-[9px] font-black uppercase tracking-widest text-gray-100 border border-white/10 shadow-lg">
@@ -38,7 +43,8 @@ export default function PropCard({ item }: { item: Prop }) {
           {displayTitle}
         </h3>
         <p className="text-white/80 text-[10px] font-bold tracking-tight">
-          ${item.price}<span className="text-white/70 font-normal"> / day</span>
+          ${item.price}
+          <span className="text-white/70 font-normal"> / day</span>
         </p>
       </div>
 
