@@ -158,7 +158,7 @@ export default async function HomePage({
             This container locks flush to the Header (top-16).
             The background blocks items scrolling behind it.
           */}
-          <div className="sticky top-16 z-20 bg-white -mx-4 px-4 md:mx-0 md:px-0 border-b border-slate-100 lg:border-none lg:pt-10">
+          <div className="sticky top-16 z-20 bg-white -mx-4 px-4 md:mx-0 md:px-0 border-b border-slate-100 lg:border-none lg:pt-10 lg:pb-5">
             <div className="lg:hidden">
               <MobileCategoryBar
                 tree={categoryTree}
