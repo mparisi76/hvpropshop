@@ -120,7 +120,17 @@ export default async function PropDetail({
           
           {/* LEFT: Gallery & Description */}
           <div className="lg:col-span-7 space-y-12">
-            <Gallery images={allImageIds} />
+            {allImageIds.length > 0 ? (
+              <Gallery images={allImageIds} />
+            ) : (
+              /* PLACEHOLDER: Keeps the layout consistent when no image exists */
+              <div className="aspect-square lg:aspect-video w-full bg-slate-50 rounded-4xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
+                <svg className="w-12 h-12 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-xs font-black uppercase tracking-widest">No images provided</p>
+              </div>
+            )}
             
             <div className="border-t pt-8 border-slate-100">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
