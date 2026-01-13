@@ -8,6 +8,16 @@ export interface Category {
   } | null;
 }
 
+export interface Rental {
+  id?: number | string;
+  status: "confirmed" | "cancelled" | "draft"; // matches your Directus statuses
+  start_date: string;
+  end_date: string;
+  quantity: number | string;
+  item?: number | string;
+  source_inquiry?: number | string;
+}
+
 export interface Prop {
   id: string | number;
   name: string;
@@ -39,6 +49,7 @@ export interface Prop {
   dimensions?: string;
   quantity_available: number;
   condition?: string;
+  rentals: Rental[];
 }
 
 export interface TreeBranch {

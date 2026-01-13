@@ -2,6 +2,50 @@
 
 import { Category, CategoryTree, Prop } from "@/types";
 
+// lib/utils.ts
+
+export interface Rental {
+  status: string;
+  start_date: string;
+  end_date: string;
+  quantity: string | number;
+}
+
+/**
+ * Calculates current available stock by subtracting confirmed 
+ * rentals that overlap with today's date.
+ */
+export function getLiveAvailability(totalQuantity: number | null, rentals: Rental[] = []) {
+  if (!totalQuantity) return 0;
+  
+  // Get today's date in YYYY-MM-DD format (matches Directus date format)
+  const today = new Date().toISOString().split('T')[0];
+
+  console.log(rentals);
+
+  const bookedUnits = rentals.reduce((acc, rental) => {
+    const isConfirmed = rental.status === 'confirmed';
+    
+    // Check if today falls within the rental window
+    const isActiveToday = today >= rental.start_date && today <= rental.end_date;
+
+    if (isConfirmed && isActiveToday) {
+      return acc + (Number(rental.quantity) || 0);
+    }
+    return acc;
+  }, 0);
+
+  const available = totalQuantity - bookedUnits;
+  
+  // Safety check to never show negative inventory
+  return Math.max(0, available);
+}
+
+// Keep your existing formatCategory util here as well...
+// export function formatCategory(name: string) {
+//   return name.replace(/-/g, ' ');
+// }
+
 export function formatCategory(slug: string) {
   if (!slug) return "";
   return slug

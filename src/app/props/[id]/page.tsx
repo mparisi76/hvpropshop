@@ -3,7 +3,7 @@ import directus from "@/lib/directus";
 import Gallery from "@/components/Gallery";
 import Link from "next/link";
 import PropCard from "@/components/PropCard";
-import { formatCategory } from "@/lib/utils";
+import { formatCategory, getLiveAvailability } from "@/lib/utils";
 import { GalleryItem, Prop } from "@/types";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -68,11 +68,22 @@ export default async function PropDetail({
         "quantity_available",
         "condition",
         "availability", // Changed from status to availability
+        { rentals: ["*"] },
+        // { rentals: ["status", "start_date", "end_date", "quantity"] }, // Only fetch what we need
       ],
     })
   );
 
+  console.log(item);
+
   if (!item) return notFound();
+
+  const liveQuantity = getLiveAvailability(
+    item.quantity_available,
+    item.rentals
+  );
+
+  console.log(liveQuantity);
 
   const relatedItems = await directus.request<Prop[]>(
     readItems("props", {
@@ -90,8 +101,11 @@ export default async function PropDetail({
   // Normalize availability for display to prevent hydration errors
   const displayAvailability = item.availability || "available";
 
-  const galleryIds = item.photo_gallery?.map((g: GalleryItem) => g.directus_files_id) || [];
-  const allImageIds = Array.from(new Set([item.thumbnail, ...galleryIds])).filter(Boolean);
+  const galleryIds =
+    item.photo_gallery?.map((g: GalleryItem) => g.directus_files_id) || [];
+  const allImageIds = Array.from(
+    new Set([item.thumbnail, ...galleryIds])
+  ).filter(Boolean);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -117,7 +131,6 @@ export default async function PropDetail({
       {/* 2. MAIN CONTENT */}
       <main className="grow max-w-7xl mx-auto px-6 pt-4 lg:pt-12 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-16 items-start">
-          
           {/* LEFT: Gallery & Description */}
           <div className="lg:col-span-7 space-y-12">
             {allImageIds.length > 0 ? (
@@ -125,13 +138,25 @@ export default async function PropDetail({
             ) : (
               /* PLACEHOLDER: Keeps the layout consistent when no image exists */
               <div className="aspect-square lg:aspect-video w-full bg-slate-50 rounded-4xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
-                <svg className="w-12 h-12 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <svg
+                  className="w-12 h-12 mb-4 opacity-20"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
-                <p className="text-xs font-black uppercase tracking-widest">No images provided</p>
+                <p className="text-xs font-black uppercase tracking-widest">
+                  No images provided
+                </p>
               </div>
             )}
-            
+
             <div className="border-t pt-8 border-slate-100">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
                 Description
@@ -169,13 +194,19 @@ export default async function PropDetail({
 
                 {/* Availability Dot */}
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100">
-                  <div className={`w-2 h-2 rounded-full ${
-                    displayAvailability === 'available' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
-                    displayAvailability === 'rented' ? 'bg-red-500' :
-                    displayAvailability === 'in repair' ? 'bg-orange-500' :
-                    displayAvailability === 'sold' ? 'bg-blue-500' :
-                    'bg-slate-400'
-                  }`} />
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      displayAvailability === "available"
+                        ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
+                        : displayAvailability === "rented"
+                        ? "bg-red-500"
+                        : displayAvailability === "in repair"
+                        ? "bg-orange-500"
+                        : displayAvailability === "sold"
+                        ? "bg-blue-500"
+                        : "bg-slate-400"
+                    }`}
+                  />
                   <span className="text-[9px] font-black uppercase tracking-tight text-slate-600">
                     {displayAvailability}
                   </span>
@@ -184,10 +215,30 @@ export default async function PropDetail({
 
               {/* SPECS GRID */}
               <div className="grid grid-cols-2 gap-3">
-                <SpecBox label="Provider" value={item.user_created?.shop_name || item.user_created?.first_name || "Independent Vendor"} />
-                <SpecBox label="Location" value={item.user_created?.city && item.user_created?.state ? `${item.user_created.city}, ${item.user_created.state}` : "Hudson Valley, NY"} />
-                <SpecBox label="Condition" value={item.condition || "Production Ready"} />
-                <SpecBox label="Available" value={`${item.quantity_available ?? 1} ${item.quantity_available === 1 ? 'Unit' : 'Units'}`} />
+                <SpecBox
+                  label="Provider"
+                  value={
+                    item.user_created?.shop_name ||
+                    item.user_created?.first_name ||
+                    "Independent Vendor"
+                  }
+                />
+                <SpecBox
+                  label="Location"
+                  value={
+                    item.user_created?.city && item.user_created?.state
+                      ? `${item.user_created.city}, ${item.user_created.state}`
+                      : "Hudson Valley, NY"
+                  }
+                />
+                <SpecBox
+                  label="Condition"
+                  value={item.condition || "Production Ready"}
+                />
+                <SpecBox 
+                  label="Available Now" 
+                  value={displayAvailability === 'available' ? `${liveQuantity} Units` : "0 Units"} 
+                />
                 {item.dimensions && (
                   <div className="col-span-2">
                     <SpecBox label="Dimensions" value={item.dimensions} />
@@ -247,8 +298,12 @@ export default async function PropDetail({
 function SpecBox({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
-      <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">{label}</p>
-      <p className="font-bold text-slate-900 text-sm truncate capitalize">{value}</p>
+      <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mb-1">
+        {label}
+      </p>
+      <p className="font-bold text-slate-900 text-sm truncate capitalize">
+        {value}
+      </p>
     </div>
   );
 }
