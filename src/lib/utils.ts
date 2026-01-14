@@ -21,8 +21,6 @@ export function getLiveAvailability(totalQuantity: number | null, rentals: Renta
   // Get today's date in YYYY-MM-DD format (matches Directus date format)
   const today = new Date().toISOString().split('T')[0];
 
-  console.log(rentals);
-
   const bookedUnits = rentals.reduce((acc, rental) => {
     const isConfirmed = rental.status === 'confirmed';
     

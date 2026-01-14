@@ -9,6 +9,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export interface ActionState {
   success: boolean;
+  url?: string;
   error?: string;
 }
 
@@ -22,12 +23,13 @@ export async function sendInquiry(
   const email = (formData.get("email") as string) || "";
   const start = formData.get("start") as string;
   const end = formData.get("end") as string;
-  const notes = (formData.get("notes") as string) || "";
+  const message = (formData.get("message") as string) || "";
   const quantityString = formData.get("quantity") as string;
   const quantity = parseInt(quantityString, 10) || 1;
 
   // 2. Safely handle vendor info
-  const vendorEmail = item.user_created?.email || "hudsonvalleypropshop@gmail.com";
+  const vendorEmail =
+    item.user_created?.email || "hudsonvalleypropshop@gmail.com";
   const vendorName = item.user_created?.first_name || "Vendor";
 
   try {
@@ -39,17 +41,17 @@ export async function sendInquiry(
         customer_name: name,
         customer_email: email,
         vendor_email: vendorEmail,
-        message: notes,
+        message,
         status: "new",
         start_date: start,
         end_date: end,
-        quantity: quantity,
+        quantity,
       })
     );
 
     // 4. Send the Email Notification via Resend
     const { error: resendError } = await resend.emails.send({
-      from: "Prop Vault <onboarding@hvpropshop.com>", 
+      from: "Prop Vault <onboarding@hvpropshop.com>",
       to: vendorEmail,
       replyTo: email,
       subject: `New Inquiry: ${item.name}`,
@@ -60,7 +62,9 @@ export async function sendInquiry(
           
           <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
             <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: bold;">Item Requested</p>
-            <p style="margin: 4px 0 0 0; font-weight: bold; color: #0f172a;">${item.name} (Qty: ${quantity})</p>
+            <p style="margin: 4px 0 0 0; font-weight: bold; color: #0f172a;">${
+              item.name
+            } (Qty: ${quantity})</p>
           </div>
 
           <div style="margin-bottom: 20px;">
@@ -74,12 +78,16 @@ export async function sendInquiry(
             <p style="margin: 4px 0;">${start} — ${end}</p>
           </div>
 
-          ${notes ? `
+          ${
+            message
+              ? `
           <div style="margin-bottom: 20px;">
             <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; font-weight: bold;">Production Notes</p>
-            <p style="margin: 4px 0; font-style: italic;">"${notes}"</p>
+            <p style="margin: 4px 0; font-style: italic;">"${message}"</p>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
 
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
           <p style="font-size: 12px; color: #94a3b8; text-align: center;">Log into Prop Vault to confirm this booking.</p>
@@ -92,15 +100,16 @@ export async function sendInquiry(
     }
 
     // Now correctly using vendorName and vendorEmail in the log
-    console.log(`Inquiry logged for ${item.name}. Notification sent to ${vendorName} (${vendorEmail})`);
-    
-    return { success: true };
+    console.log(
+      `Inquiry logged for ${item.name}. Notification sent to ${vendorName} (${vendorEmail})`
+    );
 
+    return { success: true };
   } catch (err) {
     console.error("Action Error:", err);
-    return { 
-      success: false, 
-      error: err instanceof Error ? err.message : "Failed to log inquiry." 
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to log inquiry.",
     };
   }
 }

@@ -67,23 +67,22 @@ export default async function PropDetail({
         "dimensions",
         "quantity_available",
         "condition",
-        "availability", // Changed from status to availability
+        "availability",
         { rentals: ["*"] },
-        // { rentals: ["status", "start_date", "end_date", "quantity"] }, // Only fetch what we need
       ],
     })
   );
 
-  console.log(item);
-
   if (!item) return notFound();
 
+  // 1. STOCK LOGIC
   const liveQuantity = getLiveAvailability(
     item.quantity_available,
     item.rentals
   );
 
-  console.log(liveQuantity);
+  const displayAvailability = item.availability || "available";
+  const isOutOfStock = liveQuantity <= 0 || displayAvailability === "sold";
 
   const relatedItems = await directus.request<Prop[]>(
     readItems("props", {
@@ -97,9 +96,6 @@ export default async function PropDetail({
       limit: 4,
     })
   );
-
-  // Normalize availability for display to prevent hydration errors
-  const displayAvailability = item.availability || "available";
 
   const galleryIds =
     item.photo_gallery?.map((g: GalleryItem) => g.directus_files_id) || [];
@@ -133,29 +129,17 @@ export default async function PropDetail({
         <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-16 items-start">
           {/* LEFT: Gallery & Description */}
           <div className="lg:col-span-7 space-y-12">
-            {allImageIds.length > 0 ? (
-              <Gallery images={allImageIds} />
-            ) : (
-              /* PLACEHOLDER: Keeps the layout consistent when no image exists */
-              <div className="aspect-square lg:aspect-video w-full bg-slate-50 rounded-4xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
-                <svg
-                  className="w-12 h-12 mb-4 opacity-20"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1}
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <p className="text-xs font-black uppercase tracking-widest">
-                  No images provided
-                </p>
-              </div>
-            )}
+            <div className="relative">
+              {allImageIds.length > 0 ? (
+                <Gallery images={allImageIds} />
+              ) : (
+                <div className="aspect-square lg:aspect-video w-full bg-slate-50 rounded-4xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
+                  <p className="text-xs font-black uppercase tracking-widest">
+                    No images provided
+                  </p>
+                </div>
+              )}
+            </div>
 
             <div className="border-t pt-8 border-slate-100">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">
@@ -173,7 +157,6 @@ export default async function PropDetail({
           {/* RIGHT: Sidebar */}
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-32 space-y-8">
-              {/* Header Info + Availability Dot */}
               <div className="flex justify-between items-start">
                 <div>
                   <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold tracking-widest uppercase mb-4">
@@ -184,31 +167,35 @@ export default async function PropDetail({
                   <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 leading-tight">
                     {item.name}
                   </h1>
-                  <p className="text-2xl text-slate-500 mt-4 font-light">
-                    ${item.price?.toLocaleString()}{" "}
-                    <span className="text-sm font-normal text-slate-400">
-                      / day
-                    </span>
-                  </p>
+
+                  <div className="flex items-baseline gap-3 mt-4">
+                    <p
+                      className={`text-2xl font-light ${
+                        isOutOfStock
+                          ? "text-slate-300 line-through"
+                          : "text-slate-500"
+                      }`}
+                    >
+                      ${item.price?.toLocaleString()}
+                    </p>
+                    {!isOutOfStock && (
+                      <span className="text-sm font-normal text-slate-400">
+                        / day
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                {/* Availability Dot */}
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 whitespace-nowrap">
                   <div
                     className={`w-2 h-2 rounded-full ${
-                      displayAvailability === "available"
-                        ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
-                        : displayAvailability === "rented"
-                        ? "bg-red-500"
-                        : displayAvailability === "in repair"
-                        ? "bg-orange-500"
-                        : displayAvailability === "sold"
-                        ? "bg-blue-500"
-                        : "bg-slate-400"
+                      isOutOfStock
+                        ? "bg-slate-300"
+                        : "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
                     }`}
                   />
                   <span className="text-[9px] font-black uppercase tracking-tight text-slate-600">
-                    {displayAvailability}
+                    {isOutOfStock ? "Unavailable" : displayAvailability}
                   </span>
                 </div>
               </div>
@@ -235,9 +222,9 @@ export default async function PropDetail({
                   label="Condition"
                   value={item.condition || "Production Ready"}
                 />
-                <SpecBox 
-                  label="Available Now" 
-                  value={displayAvailability === 'available' ? `${liveQuantity} Units` : "0 Units"} 
+                <SpecBox
+                  label="Available Now"
+                  value={isOutOfStock ? "0 Units" : `${liveQuantity} Units`}
                 />
                 {item.dimensions && (
                   <div className="col-span-2">
@@ -248,7 +235,28 @@ export default async function PropDetail({
 
               {/* ACTION BUTTON */}
               <div className="pt-2">
-                <InquiryWrapper item={item} />
+                {isOutOfStock ? (
+                  <div className="space-y-4">
+                    <div className="w-full py-4 px-6 bg-slate-50 text-slate-400 rounded-2xl font-black uppercase tracking-widest text-center border border-slate-100 italic">
+                      Item Sold
+                    </div>
+                    <Link
+                      href="/"
+                      className="block text-center text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 hover:text-blue-800 transition-colors"
+                    >
+                      ← Back to Collection
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    <InquiryWrapper item={item} />
+                    {liveQuantity > 0 && liveQuantity < 3 && (
+                      <p className="text-center mt-3 text-orange-600 text-[10px] font-black uppercase tracking-tighter animate-pulse">
+                        🔥 Only {liveQuantity} left in stock
+                      </p>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -283,12 +291,25 @@ export default async function PropDetail({
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
             Price
           </span>
-          <p className="font-bold text-xl text-slate-900 leading-none">
+          <p
+            className={`font-bold text-xl leading-none ${
+              isOutOfStock ? "text-slate-300 line-through" : "text-slate-900"
+            }`}
+          >
             ${item.price?.toLocaleString()}
           </p>
         </div>
         <div className="flex-1 max-w-60">
-          <InquiryWrapper item={item} />
+          {isOutOfStock ? (
+            <button
+              disabled
+              className="w-full py-3 bg-slate-50 text-slate-400 rounded-xl font-black uppercase tracking-widest text-[10px] border border-slate-100 italic"
+            >
+              Sold Out
+            </button>
+          ) : (
+            <InquiryWrapper item={item} />
+          )}
         </div>
       </div>
     </div>
