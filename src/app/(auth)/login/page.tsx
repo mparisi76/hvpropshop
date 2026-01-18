@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { loginAction, type ActionState } from "./actions";
+import { loginAction, type ActionState } from "./action";
 // import Link from "next/link";
 import Logo from "@/components/Logo";
 
