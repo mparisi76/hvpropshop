@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { deleteFile, readMe, updateMe, uploadFiles, withToken } from "@directus/sdk";
+import { deleteFile, readMe, uploadFiles, withToken } from "@directus/sdk";
 import directus from "@/lib/directus";
 import { updateMeFields } from "@/lib/directusUser";
 import { getActionToken } from "@/lib/actionSession";
