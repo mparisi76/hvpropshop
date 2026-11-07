@@ -1,11 +1,18 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { loginAction, type ActionState } from "./action";
 import AuthCard from "@/components/AuthCard";
 import PasswordInput from "@/components/ui/PasswordInput";
 import { CONTACT_EMAIL } from "@/lib/site";
+
+/** Carries ?next= (where to go after login) into the form. */
+function NextField() {
+  const next = useSearchParams().get("next");
+  return next ? <input type="hidden" name="next" value={next} /> : null;
+}
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
@@ -30,6 +37,9 @@ export default function LoginPage() {
       }
     >
       <form action={formAction} className="space-y-4">
+        <Suspense fallback={null}>
+          <NextField />
+        </Suspense>
         {state?.error && (
           <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {state.error}

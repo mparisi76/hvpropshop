@@ -16,5 +16,9 @@ export async function loginAction(prevState: ActionState, formData: FormData): P
   if (!tokens) return { error: "Invalid email or password" };
 
   setSessionCookies(await cookies(), tokens);
-  redirect("/dashboard");
+
+  // Go back where they were headed (same-site paths only)
+  const next = String(formData.get("next") ?? "");
+  const safe = next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login");
+  redirect(safe ? next : "/dashboard");
 }
