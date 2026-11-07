@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 import Stripe from "stripe";
-import directus from "@/lib/directus";
-import { readItem } from "@directus/sdk";
+import { getBooking } from "@/lib/bookings";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -16,56 +16,40 @@ export default async function SuccessPage({
   const session = await stripe.checkout.sessions.retrieve(session_id);
   const inquiryId = session.metadata?.inquiry_id;
 
-	
 
-  // 2. Get the Prop details from Directus via the Inquiry
+  // 2. Item name from the booking (read with the server token — bookings aren't public)
   let propName = "your rental";
   if (inquiryId) {
-    const inquiry = await directus.request(
-      readItem("inquiries", inquiryId, {
-        fields: ["*", { prop_id: ["title"] }],
-      })
-    );
-    propName = inquiry?.item_name || "your rental";
+    const booking = await getBooking(inquiryId).catch(() => null);
+    propName = booking?.item_name || "your rental";
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 text-center">
-      <div className="max-w-md w-full bg-white p-8 rounded-xl shadow-lg border border-green-100">
-        <div className="text-64px mb-4">✅</div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Payment Received!
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Thanks,{" "}
-          <span className="font-semibold text-gray-800">
-            {session.customer_details?.name}
-          </span>
-          ! Your booking for <span className="italic">&ldquo;{propName}&rdquo;</span> is
-          officially confirmed.
+    <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-4 py-12">
+      <div className="card w-full max-w-md p-6 shadow-sm sm:p-8">
+        <CheckCircle2 className="h-8 w-8 text-accent" aria-hidden />
+        <h1 className="mt-4 text-xl font-semibold tracking-tight">Booking confirmed</h1>
+        <p className="mt-1 text-sm text-neutral-600">
+          Thanks{session.customer_details?.name ? `, ${session.customer_details.name}` : ""}.
+          Your booking for{" "}
+          <span className="font-medium text-neutral-900">{propName}</span> is confirmed.
         </p>
 
-        <div className="bg-gray-50 rounded-lg p-4 mb-8 text-sm text-left">
-          <p className="text-gray-500 uppercase tracking-wider font-bold text-xs mb-2">
-            Order Summary
-          </p>
-          <div className="flex justify-between mb-1">
-            <span>Amount Paid:</span>
-            <span className="font-mono">
-              ${(session.amount_total || 0) / 100}
-            </span>
+        <dl className="mt-6 divide-y divide-neutral-200 border-y border-neutral-200 text-sm">
+          <div className="flex justify-between py-2.5">
+            <dt className="text-neutral-500">Amount paid</dt>
+            <dd className="font-medium tabular-nums">
+              ${((session.amount_total || 0) / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </dd>
           </div>
-          <div className="flex justify-between">
-            <span>Receipt Email:</span>
-            <span>{session.customer_details?.email}</span>
+          <div className="flex justify-between gap-4 py-2.5">
+            <dt className="text-neutral-500">Receipt sent to</dt>
+            <dd className="truncate font-medium">{session.customer_details?.email}</dd>
           </div>
-        </div>
+        </dl>
 
-        <Link
-          href="/"
-          className="inline-block bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors"
-        >
-          Return to Gallery
+        <Link href="/" className="btn-primary mt-6 w-full">
+          Back to inventory
         </Link>
       </div>
     </div>

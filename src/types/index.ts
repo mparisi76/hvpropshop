@@ -37,15 +37,7 @@ export interface Prop {
       slug: string;
     } | null;
   } | null;
-  user_created: {
-    email: string;
-    first_name?: string;
-    last_name?: string;
-    shop_name?: string;
-    city?: string;
-    state?: string;
-    phone?: string;
-  };
+  user_created: Vendor;
   dimensions?: string;
   quantity_available: number;
   condition?: string;
@@ -74,4 +66,22 @@ export interface CategoryTree {
 
 export interface GalleryItem {
   directus_files_id: string;
+}
+
+/** A vendor is a directus_users record. */
+export interface Vendor {
+  id?: string;
+  email?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  shop_name?: string | null;
+  city?: string | null;
+  state?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  featured_vendor?: boolean | null;
+  /** Directus file id of the shop logo */
+  shop_logo?: string | null;
+  /** Free text, or an array if the field is a multi-select in Directus. */
+  inventory_type?: string | string[] | null;
 }

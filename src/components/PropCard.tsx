@@ -1,61 +1,66 @@
-import { formatCategory } from "@/lib/utils";
 import Link from "next/link";
 import Image from "next/image";
+import { MapPin } from "lucide-react";
 import { Prop } from "@/types";
+import PullListButton from "./PullListButton";
 
 export default function PropCard({ item }: { item: Prop }) {
   const isRented = item.availability === "rented";
-  const displayTitle = item.name || "Untitled Prop";
+  const title = item.name || "Untitled prop";
+  const vendor = item.user_created?.shop_name || item.user_created?.first_name;
+  const location = [item.user_created?.city, item.user_created?.state]
+    .filter(Boolean)
+    .join(", ");
 
   return (
-    <Link
-      href={`/props/${item.id}`}
-      className="group relative block overflow-hidden rounded-2xl bg-slate-200 aspect-square antialiased"
-    >
-      {item.thumbnail ? (
-        <Image
-          src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${item.thumbnail}?width=600&height=600&fit=cover`}
-          alt={displayTitle}
-          fill
-          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-          className="object-cover group-hover:scale-110 transition duration-700 ease-in-out"
-        />
-      ) : (
-        <div className="absolute inset-0 bg-slate-300 flex items-center justify-center text-slate-500 text-xs">
-          No Image
+    <div className="relative">
+      <Link href={`/props/${item.id}`} className="group block">
+        <div className="relative aspect-4/3 overflow-hidden rounded-md border border-neutral-200 bg-neutral-100">
+          {item.thumbnail ? (
+            <Image
+              src={`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${item.thumbnail}?width=600&height=450&fit=cover`}
+              alt={title}
+              fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              className="object-cover transition-opacity group-hover:opacity-90"
+            />
+          ) : (
+            <div className="absolute inset-0 grid place-items-center text-xs text-neutral-400">
+              No photo
+            </div>
+          )}
+          {isRented && (
+            <span className="absolute left-2 top-2 rounded bg-white/95 px-2 py-0.5 text-xs font-medium text-neutral-700 shadow-sm">
+              On a job
+            </span>
+          )}
         </div>
-      )}
 
-      {/* 2. The Scrim (Overlay) */}
-      {/* Note: Added z-index classes to ensure text stays on top of the 'fill' image */}
-      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity z-10" />
-
-      {/* 3. CATEGORY PILL */}
-      <div className="absolute top-3 right-3 z-20">
-        <span className="inline-block px-2.5 py-1 rounded-md bg-black/50 backdrop-blur-md text-[9px] font-black uppercase tracking-widest text-gray-100 border border-white/10 shadow-lg">
-          {formatCategory(item.category?.name || "")}
-        </span>
-      </div>
-
-      {/* 4. TITLE & PRICE */}
-      <div className="absolute bottom-0 left-0 p-4 w-full translate-y-1 group-hover:translate-y-0 transition-transform duration-300 z-20">
-        <h3 className="text-white font-bold text-sm leading-tight drop-shadow-md truncate mb-0.5">
-          {displayTitle}
-        </h3>
-        <p className="text-white/80 text-[10px] font-bold tracking-tight">
-          ${item.price}
-          <span className="text-white/70 font-normal"> / day</span>
-        </p>
-      </div>
-
-      {/* 5. Status Overlay */}
-      {isRented && (
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-30">
-          <span className="bg-white text-black text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-2xl">
-            On Set
-          </span>
+        <div className="mt-2.5 space-y-0.5">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="line-clamp-2 text-sm font-medium leading-snug text-neutral-900 group-hover:underline group-hover:underline-offset-2">
+              {title}
+            </h3>
+            {item.price != null && (
+              <p className="shrink-0 text-sm tabular-nums text-neutral-900">
+                ${item.price.toLocaleString()}
+                <span className="text-neutral-500">/day</span>
+              </p>
+            )}
+          </div>
+          {(vendor || location) && (
+            <p className="flex items-center gap-1 truncate text-xs text-neutral-500">
+              {location && <MapPin className="h-3 w-3 shrink-0" aria-hidden />}
+              <span className="truncate">
+                {[vendor, location].filter(Boolean).join(" · ")}
+              </span>
+            </p>
+          )}
         </div>
-      )}
-    </Link>
+      </Link>
+      <div className="absolute right-2 top-2">
+        <PullListButton id={item.id} variant="icon" />
+      </div>
+    </div>
   );
 }

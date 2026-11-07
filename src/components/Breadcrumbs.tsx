@@ -1,63 +1,44 @@
-"use client";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
 interface BreadcrumbProps {
   parent?: { name: string; slug: string };
   current?: { name: string; slug: string };
+  /** Accepted for API compatibility; search is shown in the page heading. */
   search?: string;
+  /** Render the current category as a link (e.g. on a prop detail page). */
+  linkCurrent?: boolean;
 }
 
-const Separator = () => (
-  <svg
-    className="text-slate-300 mx-1 shrink-0"
-    width="8"
-    height="8"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="4"
-  >
-    <path d="m9 18 6-6-6-6" />
-  </svg>
+const Sep = () => (
+  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-neutral-400" aria-hidden />
 );
 
-export default function Breadcrumbs({
-  parent,
-  current,
-  search,
-}: BreadcrumbProps) {
-  // If no data, return null so ZERO space is taken
-  if (!current && !search) return null;
+export default function Breadcrumbs({ parent, current, linkCurrent }: BreadcrumbProps) {
+  if (!current) return null;
 
   return (
-    <nav
-      aria-label="Breadcrumb"
-      className="flex items-center text-[10px] uppercase tracking-[0.2em] font-bold"
-    >
-      <Link
-        href="/"
-        className="text-slate-400 hover:text-blue-600 transition-colors"
-      >
-        Home
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-sm text-neutral-500">
+      <Link href="/" className="hover:text-neutral-900">
+        All inventory
       </Link>
-
       {parent && (
         <>
-          <Separator />
-          <Link
-            href={`/?category=${parent.slug}`}
-            className="text-slate-400 hover:text-blue-600 transition-colors"
-          >
+          <Sep />
+          <Link href={`/?category=${parent.slug}`} className="hover:text-neutral-900">
             {parent.name}
           </Link>
         </>
       )}
-
-      {current && (
-        <>
-          <Separator />
-          <span className="text-slate-900">{current.name}</span>
-        </>
+      <Sep />
+      {linkCurrent ? (
+        <Link href={`/?category=${current.slug}`} className="hover:text-neutral-900">
+          {current.name}
+        </Link>
+      ) : (
+        <span className="text-neutral-900" aria-current="page">
+          {current.name}
+        </span>
       )}
     </nav>
   );

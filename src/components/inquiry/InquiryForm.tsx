@@ -1,276 +1,193 @@
 "use client";
 
-import { useActionState, useState, useMemo, useEffect } from "react";
+import { useActionState, useMemo, useState } from "react";
+import { Check } from "lucide-react";
 import { Prop } from "@/types";
-import { ActionState } from "@/app/actions/__sendInquiry";
-import { sendStripe } from "@/app/actions/sendStripe";
+import Select from "@/components/ui/Select";
+import { requestBooking, type BookingRequestState } from "@/app/actions/requestBooking";
 
 interface InquiryFormProps {
   item: Prop;
   onClose: () => void;
 }
 
+/** Days between two YYYY-MM-DD dates, counting both ends. */
+function rentalDays(start: string, end: string) {
+  const ms = new Date(`${end}T00:00:00Z`).getTime() - new Date(`${start}T00:00:00Z`).getTime();
+  return Math.max(1, Math.round(ms / 86_400_000) + 1);
+}
+
 export default function InquiryForm({ item, onClose }: InquiryFormProps) {
   const today = new Date().toLocaleDateString("en-CA");
-  const initialState: ActionState = { success: false };
+  const [state, formAction, isPending] = useActionState<BookingRequestState, FormData>(requestBooking, null);
 
-  // State for dynamic calculations
-  const [dates, setDates] = useState({ start: "", end: "" });
-  const [selectedQty, setSelectedQty] = useState(1);
+  const v = state?.values ?? {};
+  const [dates, setDates] = useState({ start: v.start ?? "", end: v.end ?? "" });
+  const [quantity, setQuantity] = useState(Number(v.quantity) || 1);
 
-  const dailyPrice = item.price || 0;
-  const maxAvailable = item.quantity_available ?? 1;
+  const dailyPrice = Number(item.price) || 0;
+  const maxUnits = Math.max(1, Number(item.quantity_available) || 1);
+  const vendor = item.user_created?.shop_name || item.user_created?.first_name || "the vendor";
 
-  // Calculate rental duration and total cost
-  const { days, total } = useMemo(() => {
-    if (!dates.start || !dates.end) return { days: 0, total: 0 };
+  const estimate = useMemo(() => {
+    if (!dates.start || !dates.end || dates.end < dates.start) return null;
+    const days = rentalDays(dates.start, dates.end);
+    return { days, total: days * dailyPrice * quantity };
+  }, [dates, quantity, dailyPrice]);
 
-    const start = new Date(dates.start);
-    const end = new Date(dates.end);
-
-    // Calculate difference in days (inclusive of start/end)
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-    return {
-      days: diffDays,
-      total: diffDays * dailyPrice * selectedQty,
-    };
-  }, [dates, selectedQty, dailyPrice]);
-
-  const [state, formAction, isPending] = useActionState(
-    (prevState: ActionState, formData: FormData) =>
-      sendStripe(prevState, formData, item),
-    initialState
-  );
-
-  // 1. REDIRECT LOGIC (Must be before any 'return' statements)
-  useEffect(() => {
-    if (state?.success && state?.url) {
-      window.location.href = state.url;
-    }
-  }, [state]);
-
-  // 2. SUCCESS STATE (Only shows if there is no redirect URL)
-  if (state?.success && !state?.url) {
+  if (state?.success) {
     return (
-      <div className="flex-1 flex flex-col justify-center animate-fade-in px-2">
-        <div className="mb-8">
-          <div className="w-12 h-12 border-2 border-slate-900 rounded-full flex items-center justify-center mb-6 text-slate-900">
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2.5"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-          <h2 className="text-3xl font-black tracking-tighter text-slate-900 uppercase leading-none">
-            Request Received
-          </h2>
-          <div className="w-12 h-1 bg-blue-600 mt-4" />
-        </div>
-        <p className="text-slate-600 text-sm leading-relaxed mb-12">
-          Your inquiry for{" "}
-          <span className="text-slate-900 font-bold">{item.name}</span> has been
-          logged.
+      <div className="space-y-4">
+        <Check className="h-8 w-8 text-accent" aria-hidden />
+        <h2 className="text-xl font-semibold tracking-tight">Request sent</h2>
+        <p className="text-sm text-neutral-600">
+          {vendor} will confirm availability, usually within a day. We&apos;ll email{" "}
+          <span className="font-medium text-neutral-900">{state.email}</span> a link to pay once
+          they do. You won&apos;t be charged until then.
         </p>
-        <button
-          onClick={onClose}
-          className="text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors"
-        >
-          Return to Gallery
+        <button onClick={onClose} className="btn-secondary">
+          Done
         </button>
       </div>
     );
   }
 
-  // 3. "SOLD OUT" STATE
-  if (maxAvailable <= 0) {
-    return (
-      <div className="flex-1 flex flex-col justify-center animate-fade-in px-2">
-        <h2 className="text-3xl font-black tracking-tighter text-slate-900 uppercase leading-none">
-          Fully Booked
-        </h2>
-        <p className="text-slate-600 text-sm mt-4 mb-8">
-          This item is currently unavailable for the selected period.
-        </p>
-        <button
-          onClick={onClose}
-          className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400"
-        >
-          Back to Props
-        </button>
-      </div>
-    );
-  }
-
-  // 4. ACTIVE FORM STATE
   return (
-    <form action={formAction} className="space-y-8 flex-1 px-2">
+    <form action={formAction} className="space-y-5">
+      <input type="hidden" name="prop_id" value={String(item.id)} />
+      <input
+        type="text"
+        name="website_url"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden
+        className="absolute -left-[9999px] h-0 w-0 opacity-0"
+      />
+
+      <div className="rounded-md border border-neutral-200 p-3">
+        <p className="truncate text-sm font-medium">{item.name}</p>
+        <p className="truncate text-xs text-neutral-500">
+          {vendor}
+          {dailyPrice > 0 && <> · ${dailyPrice.toLocaleString()}/day</>}
+        </p>
+      </div>
+
+      <p className="text-sm text-neutral-600">
+        Send a request and {vendor} will confirm it&apos;s available. You only pay once
+        they accept.
+      </p>
+
+      {state?.error && (
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+          {state.error}
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="inq-start" className="label">Pickup</label>
+          <input
+            id="inq-start"
+            name="start"
+            required
+            type="date"
+            min={today}
+            value={dates.start}
+            onClick={(e) => e.currentTarget.showPicker?.()}
+            onChange={(e) => setDates({ ...dates, start: e.target.value })}
+            className="input"
+          />
+        </div>
+        <div>
+          <label htmlFor="inq-end" className="label">Return</label>
+          <input
+            id="inq-end"
+            name="end"
+            required
+            type="date"
+            min={dates.start || today}
+            value={dates.end}
+            onClick={(e) => e.currentTarget.showPicker?.()}
+            onChange={(e) => setDates({ ...dates, end: e.target.value })}
+            className="input"
+          />
+        </div>
+      </div>
+
       <div>
-        <h2 className="text-3xl font-black tracking-tighter text-slate-900 uppercase leading-none">
-          Inquiry
-        </h2>
-        <div className="flex flex-col gap-1 mt-4 text-[10px] uppercase tracking-widest font-bold text-slate-400">
-          <p>
-            Item:{" "}
-            <span className="text-slate-900 underline underline-offset-4 decoration-slate-200">
-              {item.name}
-            </span>
-          </p>
-          <p>
-            Vendor:{" "}
-            <span className="text-slate-900">
-              {item.user_created?.shop_name || "Independent"}
-            </span>
-          </p>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <div className="group">
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-            Name
-          </label>
-          <input
-            name="name"
-            required
-            type="text"
-            className="w-full border-b border-slate-200 py-3 outline-none focus:border-blue-600 text-sm bg-transparent"
-          />
-        </div>
-
-        <div className="group">
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-            Email
-          </label>
-          <input
-            name="email"
-            required
-            type="email"
-            className="w-full border-b border-slate-200 py-3 outline-none focus:border-blue-600 text-sm bg-transparent"
-          />
-        </div>
-
-        <div className="group">
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-            Quantity{" "}
-            <span className="text-blue-600">({maxAvailable} available)</span>
-          </label>
-          <div className="relative">
-            <select
-              name="quantity"
-              required
-              onChange={(e) => setSelectedQty(parseInt(e.target.value))}
-              className="w-full border-b border-slate-200 py-3 outline-none focus:border-blue-600 text-sm bg-transparent appearance-none cursor-pointer"
-            >
-              {Array.from({ length: maxAvailable }, (_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {i + 1} {i + 1 === 1 ? "Unit" : "Units"}
-                </option>
-              ))}
-            </select>
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-6">
-          <div className="group">
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-              Start
-            </label>
-            <input
-              name="start"
-              required
-              type="date"
-              min={today}
-              onClick={(e) => e.currentTarget.showPicker()}
-              onChange={(e) => setDates({ ...dates, start: e.target.value })}
-              className="w-full border-b border-slate-200 py-3 outline-none text-sm bg-transparent cursor-pointer"
-            />
-          </div>
-          <div className="group">
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-              End
-            </label>
-            <input
-              name="end"
-              required
-              type="date"
-              min={dates.start || today}
-              onClick={(e) => e.currentTarget.showPicker()}
-              onChange={(e) => setDates({ ...dates, end: e.target.value })}
-              className="w-full border-b border-slate-200 py-3 outline-none text-sm bg-transparent cursor-pointer"
-            />
-          </div>
-        </div>
-
-        {days > 0 && dailyPrice > 0 && (
-          <div className="bg-slate-50 p-6 rounded-2xl space-y-3 animate-fade-in border border-slate-100">
-            <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-slate-400">
-              <span>Duration</span>
-              <span className="text-slate-900">
-                {days} {days === 1 ? "Day" : "Days"}
-              </span>
-            </div>
-            <div className="flex justify-between text-[10px] uppercase tracking-widest font-bold text-slate-400">
-              <span>Daily Rate</span>
-              <span className="text-slate-900">${dailyPrice}</span>
-            </div>
-            <div className="h-px bg-slate-200 my-2" />
-            <div className="flex justify-between items-end">
-              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-blue-600">
-                Est. Total
-              </span>
-              <span className="text-2xl font-black text-slate-900 leading-none">
-                ${total.toLocaleString()}
-              </span>
-            </div>
-          </div>
-        )}
-
-        <div className="group">
-          <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-            Notes
-          </label>
-          <textarea
-            name="message"
-            rows={2}
-            className="w-full border-b border-slate-200 py-3 outline-none resize-none text-sm bg-transparent"
-            placeholder="Production notes..."
-          />
-        </div>
-      </div>
-
-      <div className="pt-4 pb-10">
-        <button
-          disabled={isPending}
-          className="relative w-full py-5 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] bg-slate-900 text-white hover:bg-blue-600 disabled:bg-slate-200 disabled:text-slate-400 shadow-xl transition-all"
+        <label htmlFor="inq-qty" className="label">Quantity</label>
+        <Select
+          id="inq-qty"
+          name="quantity"
+          value={String(quantity)}
+          onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
         >
-          {isPending ? "Connecting to Stripe..." : "Pay & Book Now"}
-        </button>
+          {Array.from({ length: maxUnits }, (_, i) => (
+            <option key={i + 1} value={i + 1}>
+              {i + 1}
+            </option>
+          ))}
+        </Select>
       </div>
+
+      {estimate && dailyPrice > 0 && (
+        <dl className="space-y-1.5 rounded-md bg-neutral-50 p-4 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-neutral-600">
+              ${dailyPrice.toLocaleString()} × {estimate.days} {estimate.days === 1 ? "day" : "days"}
+              {quantity > 1 && <> × {quantity}</>}
+            </dt>
+            <dd className="tabular-nums">${estimate.total.toLocaleString()}</dd>
+          </div>
+          <div className="flex justify-between border-t border-neutral-200 pt-1.5 font-semibold">
+            <dt>Estimated total</dt>
+            <dd className="tabular-nums">${estimate.total.toLocaleString()}</dd>
+          </div>
+        </dl>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="inq-name" className="label">Name</label>
+          <input id="inq-name" name="name" required autoComplete="name" defaultValue={v.name} className="input" />
+        </div>
+        <div>
+          <label htmlFor="inq-phone" className="label">
+            Phone <span className="font-normal text-neutral-500">(optional)</span>
+          </label>
+          <input id="inq-phone" name="phone" type="tel" autoComplete="tel" defaultValue={v.phone} className="input" />
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="inq-email" className="label">Email</label>
+        <input id="inq-email" name="email" required type="email" autoComplete="email" defaultValue={v.email} className="input" />
+      </div>
+
+      <div>
+        <label htmlFor="inq-production" className="label">
+          Production or company <span className="font-normal text-neutral-500">(optional)</span>
+        </label>
+        <input id="inq-production" name="production" defaultValue={v.production} className="input" />
+      </div>
+
+      <div>
+        <label htmlFor="inq-notes" className="label">
+          Notes <span className="font-normal text-neutral-500">(optional)</span>
+        </label>
+        <textarea
+          id="inq-notes"
+          name="message"
+          rows={3}
+          defaultValue={v.message}
+          className="input resize-none"
+          placeholder="Pickup or delivery needs, questions for the vendor…"
+        />
+      </div>
+
+      <button disabled={isPending} className="btn-accent h-11! w-full">
+        {isPending ? "Sending…" : "Send request"}
+      </button>
     </form>
   );
 }

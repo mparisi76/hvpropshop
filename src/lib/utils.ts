@@ -7,7 +7,8 @@ import { Category, CategoryTree, Prop } from "@/types";
 export interface Rental {
   status: string;
   start_date: string;
-  end_date: string;
+  /** null = open-ended (e.g. a vendor block "until further notice") */
+  end_date: string | null;
   quantity: string | number;
 }
 
@@ -25,7 +26,8 @@ export function getLiveAvailability(totalQuantity: number | null, rentals: Renta
     const isConfirmed = rental.status === 'confirmed';
     
     // Check if today falls within the rental window
-    const isActiveToday = today >= rental.start_date && today <= rental.end_date;
+    const isActiveToday =
+      today >= rental.start_date.slice(0, 10) && (!rental.end_date || today <= rental.end_date.slice(0, 10));
 
     if (isConfirmed && isActiveToday) {
       return acc + (Number(rental.quantity) || 0);

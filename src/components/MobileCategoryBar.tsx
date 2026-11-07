@@ -1,51 +1,52 @@
-"use client";
-
 import Link from "next/link";
 import { CategoryTree } from "@/types";
+import { categoryHref } from "@/lib/browse";
 
 interface MobileCategoryBarProps {
   tree: CategoryTree;
   selectedSlug?: string;
+  /** Query params (e.g. loc, sort) to carry over when switching category */
+  keepQuery?: string;
 }
+
+const chip = (active: boolean) =>
+  `whitespace-nowrap rounded-md border px-3 py-1.5 text-sm transition-colors ${
+    active
+      ? "border-neutral-900 bg-neutral-900 text-white"
+      : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
+  }`;
 
 export default function MobileCategoryBar({
   tree,
   selectedSlug,
+  keepQuery = "",
 }: MobileCategoryBarProps) {
   const sortedParents = Object.values(tree).sort((a, b) =>
     a.name.localeCompare(b.name)
   );
 
   return (
-    <div className="sticky top-27 z-20 bg-white py-2 -mx-4 px-4 md:mx-0 md:px-0 border-b border-slate-100">
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-        {/* "All" Pill */}
+    <div className="-mx-4 overflow-x-auto px-4 no-scrollbar md:mx-0 md:px-0">
+      <div className="flex items-center gap-2">
         <Link
-          href="/"
-          className={`whitespace-nowrap px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border transition-all duration-200 ${
-            !selectedSlug
-              ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-              : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
-          }`}
+          href="/vendors"
+          className="whitespace-nowrap rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-700 transition-colors hover:border-neutral-400"
         >
+          Vendors
+        </Link>
+        <span className="mx-1 h-5 w-px shrink-0 bg-neutral-200" aria-hidden />
+        <Link href={categoryHref(keepQuery)} className={chip(!selectedSlug)}>
           All
         </Link>
-
-        {/* Parent Pills */}
         {sortedParents.map((parent) => {
           const isActive =
             selectedSlug === parent.slug ||
             Object.values(parent.children).some((c) => c.slug === selectedSlug);
-
           return (
             <Link
               key={parent.slug}
-              href={`/?category=${parent.slug}`}
-              className={`whitespace-nowrap px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.15em] border transition-all duration-200 ${
-                isActive
-                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                  : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
-              }`}
+              href={categoryHref(keepQuery, parent.slug)}
+              className={chip(isActive)}
             >
               {parent.name}
             </Link>

@@ -1,15 +1,19 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
-const inter = Inter({ subsets: ["latin"] });
+export const metadata: Metadata = {
+  title: "HV Prop Shop | Prop & set dressing rentals, Hudson Valley to NYC",
+  description:
+    "Rent props and set dressing from independent vendors across the Hudson Valley and New York City.",
+};
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export default function RootLayout({
   children,
@@ -17,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="light" style={{ colorScheme: "light" }}>
-      <body className={`${inter.className} antialiased bg-white flex flex-col min-h-screen overflow-x-hidden`}>
+    <html lang="en" className={inter.variable} style={{ colorScheme: "light" }}>
+      <body className="font-sans antialiased flex flex-col min-h-screen overflow-x-hidden">
         {children}
       </body>
     </html>

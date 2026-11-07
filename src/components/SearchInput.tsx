@@ -1,14 +1,15 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useRef, Suspense } from "react";
+import { useRef } from "react";
+import { Search, X } from "lucide-react";
 
-function SearchField() {
+export default function SearchInput() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Read directly from URL - no useEffect or extra state needed
+  // Read directly from URL - no extra state needed
   const currentSearch = searchParams.get("search") ?? "";
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -29,74 +30,32 @@ function SearchField() {
   };
 
   return (
-    <form onSubmit={handleSearch} className="relative group w-full max-w-72">
-      <div className="relative flex items-center">
-        <input
-          // The key ensures React resets the input DOM element when the search is cleared
-          key={currentSearch}
-          ref={inputRef}
-          type="text"
-          name="search"
-          defaultValue={currentSearch}
-          placeholder="SEARCH DATABASE..."
-          className="w-full bg-slate-100 border-2 border-transparent focus:border-slate-200 focus:bg-white rounded-full pl-5 pr-10 py-3 text-[11px] font-semibold tracking-wider outline-none transition-all placeholder:text-slate-400"
-        />
-
-        {currentSearch ? (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="absolute right-3 p-1.5 rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
-            aria-label="Clear search"
-          >
-            {/* Inline X Icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-          </button>
-        ) : (
-          <div className="absolute right-4 text-slate-300 pointer-events-none">
-            {/* Inline Search Icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-          </div>
-        )}
-      </div>
+    <form onSubmit={handleSearch} role="search" className="relative w-full">
+      <Search
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+        aria-hidden
+      />
+      <input
+        // The key resets the input when the search is cleared
+        key={currentSearch}
+        ref={inputRef}
+        type="search"
+        name="search"
+        defaultValue={currentSearch}
+        placeholder="Search props, furniture, vehicles…"
+        aria-label="Search inventory"
+        className="input h-10 pl-9 pr-9 bg-neutral-50 focus:bg-white [&::-webkit-search-cancel-button]:hidden"
+      />
+      {currentSearch && (
+        <button
+          type="button"
+          onClick={clearSearch}
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
+          aria-label="Clear search"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
     </form>
-  );
-}
-
-export default function SearchInput() {
-  return (
-    <Suspense
-      fallback={
-        <div className="w-72 h-11 bg-slate-100 rounded-full animate-pulse" />
-      }
-    >
-      <SearchField />
-    </Suspense>
   );
 }

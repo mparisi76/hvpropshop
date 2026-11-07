@@ -1,11 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react"; // 1. Import Suspense
+import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { handleResetPassword } from "./action";
-import Logo from "@/components/Logo";
+import AuthCard from "@/components/AuthCard";
+import PasswordInput from "@/components/ui/PasswordInput";
 
-// 2. Move the form logic into a separate component
 function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const searchParams = useSearchParams();
@@ -21,63 +22,54 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <p className="text-center text-red-500 font-bold">
-        Invalid or missing token.
-      </p>
+      <div className="space-y-4">
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          This reset link is invalid or has expired.
+        </p>
+        <Link href="/forgot-password" className="btn-secondary w-full">
+          Request a new link
+        </Link>
+      </div>
     );
   }
 
   return (
-    <form action={clientAction} className="space-y-6">
+    <form action={clientAction} className="space-y-4">
       <input type="hidden" name="token" value={token} />
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl text-xs font-bold border border-red-100">
+        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {error}
-        </div>
+        </p>
       )}
       <div>
-        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 ml-4">
-          New Password
+        <label htmlFor="password" className="label">
+          New password
         </label>
-        <input
+        <PasswordInput
+          id="password"
           name="password"
-          type="password"
           required
-          placeholder="••••••••"
-          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition-all font-medium text-slate-900"
+          autoComplete="new-password"
         />
       </div>
-      <button className="w-full bg-black text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs hover:bg-blue-600 transition-all shadow-lg active:scale-95">
-        Update Password
-      </button>
+      <button className="btn-primary w-full">Update password</button>
     </form>
   );
 }
 
-// 3. The main page component provides the Suspense boundary
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-6">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center mb-8">
-          <Logo variant="dark" />
-        </div>
-
-        <div className="bg-white py-10 px-8 shadow-xl rounded-[2.5rem] border border-slate-100">
-          <h2 className="text-3xl font-black uppercase tracking-tighter text-slate-900 mb-2">
-            New Password
-          </h2>
-          <p className="text-slate-500 text-sm font-medium mb-8">
-            Please enter your new secure password below.
-          </p>
-
-          <Suspense
-            fallback={<p className="text-center text-slate-400">Loading...</p>}
-          >
-            <ResetPasswordForm />
-          </Suspense>
-        </div>
-      </div>
-    </div>
+    <AuthCard
+      title="Choose a new password"
+      footer={
+        <Link href="/login" className="link">
+          Back to login
+        </Link>
+      }
+    >
+      <Suspense fallback={<div className="h-28 animate-pulse rounded-md bg-neutral-100" />}>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthCard>
   );
 }

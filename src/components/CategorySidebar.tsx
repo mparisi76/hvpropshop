@@ -2,14 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ChevronDown, Store } from "lucide-react";
 import { CategoryTree } from "@/types";
+import { categoryHref } from "@/lib/browse";
 
 export default function CategorySidebar({
   tree,
   selectedSlug,
+  keepQuery = "",
+  vendorCount,
 }: {
   tree: CategoryTree;
   selectedSlug?: string;
+  /** Query params (e.g. loc, sort) to carry over when switching category */
+  keepQuery?: string;
+  vendorCount?: number;
 }) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
     () => {
@@ -33,135 +40,99 @@ export default function CategorySidebar({
   const sortedParents = Object.values(tree).sort((a, b) =>
     a.name.localeCompare(b.name)
   );
+  const totalAll = sortedParents.reduce((n, p) => n + p.totalCount, 0);
+
+  const rowClass = (active: boolean) =>
+    `flex flex-1 items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors ${
+      active
+        ? "bg-neutral-100 font-medium text-neutral-900"
+        : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"
+    }`;
 
   return (
-    <aside className="w-64 flex flex-col gap-4 select-none animate-in fade-in duration-500">
-      {/* "All Props" Section */}
-      <div className="group">
+    <nav aria-label="Categories" className="select-none">
+      <div className="mb-6 border-b border-neutral-200 pb-4">
+        <p className="eyebrow mb-2 px-2">Vendors</p>
         <Link
-          href="/"
-          className={`flex items-center justify-between text-[10px] font-black uppercase tracking-[0.15em] transition-all ${
-            !selectedSlug ? "text-blue-600" : "text-slate-600 hover:text-black"
-          }`}
+          href="/vendors"
+          className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
         >
-          <span>All Inventory</span>
-          {!selectedSlug && (
-            <div className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+          <span className="flex items-center gap-2">
+            <Store className="h-4 w-4 text-neutral-400" aria-hidden />
+            Browse vendors
+          </span>
+          {vendorCount != null && (
+            <span className="text-xs tabular-nums text-neutral-400">{vendorCount}</span>
           )}
         </Link>
-        <div
-          className={`mt-1.5 h-px w-full ${
-            !selectedSlug
-              ? "bg-blue-600"
-              : "bg-slate-200 group-hover:bg-slate-400 transition-colors"
-          }`}
-        />
       </div>
 
-      <nav className="flex flex-col gap-1">
+      <p className="eyebrow mb-2 px-2">Categories</p>
+
+      <Link href={categoryHref(keepQuery)} className={rowClass(!selectedSlug)}>
+        <span>All inventory</span>
+        <span className="text-xs tabular-nums text-neutral-400">{totalAll}</span>
+      </Link>
+
+      <ul className="mt-1 space-y-0.5">
         {sortedParents.map((parent) => {
           const isOpen = openSections[parent.slug];
           const isActive = selectedSlug === parent.slug;
           const hasChildren = Object.keys(parent.children).length > 0;
-          const isParentOfActiveChild = Object.values(parent.children).some(
-            (c) => c.slug === selectedSlug
-          );
-
           const sortedChildren = Object.values(parent.children).sort((a, b) =>
             a.name.localeCompare(b.name)
           );
 
           return (
-            <div key={parent.slug} className="flex flex-col">
-              {/* Parent Entry */}
-              <div className="flex items-center justify-between py-1 group/item">
+            <li key={parent.slug}>
+              <div className="flex items-center gap-0.5">
                 <Link
+                  href={categoryHref(keepQuery, parent.slug)}
                   onClick={() =>
-                    setOpenSections((prev) => ({
-                      ...prev,
-                      [parent.slug]: true,
-                    }))
+                    setOpenSections((prev) => ({ ...prev, [parent.slug]: true }))
                   }
-                  href={`/?category=${parent.slug}`}
-                  className={`flex items-center gap-2 font-bold uppercase text-[11px] tracking-wider transition-all ${
-                    isActive || isParentOfActiveChild
-                      ? "text-blue-600"
-                      : "text-slate-700 hover:text-black"
-                  }`}
+                  className={rowClass(isActive)}
                 >
-                  {parent.name}
-                  <span
-                    className={`text-[9px] font-bold ${
-                      isActive || isParentOfActiveChild
-                        ? "text-blue-400"
-                        : "text-slate-400"
-                    }`}
-                  >
+                  <span className="truncate">{parent.name}</span>
+                  <span className="text-xs tabular-nums text-neutral-400">
                     {parent.totalCount}
                   </span>
                 </Link>
-
                 {hasChildren && (
                   <button
                     onClick={() => toggleSection(parent.slug)}
-                    className="p-1 hover:bg-slate-100 rounded transition-colors text-slate-400 hover:text-slate-900"
+                    className="rounded-md p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900"
+                    aria-label={`${isOpen ? "Collapse" : "Expand"} ${parent.name}`}
+                    aria-expanded={!!isOpen}
                   >
-                    <svg
-                      className={`w-3 h-3 transition-transform duration-200 ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={3}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                    />
                   </button>
                 )}
               </div>
 
-              {/* Sub-categories - Darker & Clearer */}
-              {hasChildren && (
-                <div
-                  className={`grid transition-all duration-200 ease-in-out ${
-                    isOpen
-                      ? "grid-rows-[1fr] opacity-100"
-                      : "grid-rows-[0fr] opacity-0"
-                  }`}
-                >
-                  <div className="overflow-hidden">
-                    <div className="flex flex-col pl-3 mb-1 border-l-2 border-slate-100 ml-1">
-                      {sortedChildren.map((child) => (
-                        <Link
-                          key={child.slug}
-                          href={`/?category=${child.slug}`}
-                          className={`text-[12px] py-1.5 transition-all ${
-                            selectedSlug === child.slug
-                              ? "text-blue-600 font-extrabold"
-                              : "text-slate-600 hover:text-blue-600"
-                          }`}
-                        >
-                          <span className="flex items-center justify-between pr-2">
-                            {child.name}
-                            <span className="text-[10px] font-medium opacity-60">
-                              {child.count}
-                            </span>
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              {hasChildren && isOpen && (
+                <ul className="my-0.5 ml-3 space-y-0.5 border-l border-neutral-200 pl-2">
+                  {sortedChildren.map((child) => (
+                    <li key={child.slug}>
+                      <Link
+                        href={categoryHref(keepQuery, child.slug)}
+                        className={rowClass(selectedSlug === child.slug)}
+                      >
+                        <span className="truncate">{child.name}</span>
+                        <span className="text-xs tabular-nums text-neutral-400">
+                          {child.count}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </div>
+            </li>
           );
         })}
-      </nav>
-    </aside>
+      </ul>
+    </nav>
   );
 }

@@ -2,13 +2,16 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { ACCESS_COOKIE, REFRESH_COOKIE, logoutSession } from "@/lib/session";
 
 export async function logout() {
   const cookieStore = await cookies();
-  
-  // Delete the session cookie we created during login
-  cookieStore.delete("directus_token");
-  
-  // Send them back to the login page
+
+  const refresh = cookieStore.get(REFRESH_COOKIE)?.value;
+  if (refresh) await logoutSession(refresh);
+
+  cookieStore.delete(ACCESS_COOKIE);
+  cookieStore.delete(REFRESH_COOKIE);
+
   redirect("/login");
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import PropCard from "./PropCard";
 import { Prop } from "@/types";
 
@@ -8,6 +9,9 @@ interface PropFeedProps {
   initialItems: Prop[];
   category?: string;
   search?: string;
+  vendor?: string;
+  loc?: string;
+  sort?: string;
   totalCount: number;
 }
 
@@ -15,13 +19,15 @@ export default function PropFeed({
   initialItems,
   category,
   search,
+  vendor,
+  loc,
+  sort,
   totalCount,
 }: PropFeedProps) {
   const [items, setItems] = useState<Prop[]>(initialItems);
   const [offset, setOffset] = useState(initialItems.length);
   const [loading, setLoading] = useState(false);
 
-  // Derived state: We have more if our current list is shorter than the total vault count
   const hasMore = items.length < totalCount;
 
   const loadMore = async () => {
@@ -29,14 +35,18 @@ export default function PropFeed({
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `/api/props?offset=${offset}&category=${category || ""}&search=${
-          search || ""
-        }`
-      );
+      const params = new URLSearchParams({
+        offset: String(offset),
+        category: category || "",
+        search: search || "",
+      });
+      if (vendor) params.set("vendor", vendor);
+      if (loc) params.set("loc", loc);
+      if (sort) params.set("sort", sort);
+      const response = await fetch(`/api/props?${params.toString()}`);
       const nextItems = await response.json();
 
-      if (nextItems.length > 0) {
+      if (Array.isArray(nextItems) && nextItems.length > 0) {
         setItems((prev) => [...prev, ...nextItems]);
         setOffset((prev) => prev + nextItems.length);
       }
@@ -47,83 +57,30 @@ export default function PropFeed({
     }
   };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   return (
-    <div className="flex flex-col gap-12 lg:gap-16">
-      {/* Grid Layout */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-10 md:gap-10">
+    <div className="space-y-10">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 xl:grid-cols-4">
         {items.map((item, index) => (
-          <div
-            key={`${item.id}-${index}`}
-            className="animate-fade-in-up"
-            style={{ animationDelay: `${(index % 12) * 50}ms` }}
-          >
-            <PropCard item={item} />
-          </div>
+          <PropCard key={`${item.id}-${index}`} item={item} />
         ))}
       </div>
 
-      {/* Pagination Footer */}
-      <div className="flex justify-center pb-20">
-        {hasMore ? (
-          <button
-            onClick={loadMore}
-            disabled={loading}
-            className="group relative px-10 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-[0.3em] transition-all hover:bg-blue-600 active:scale-95 disabled:opacity-50"
-          >
+      {hasMore && (
+        <div className="flex flex-col items-center gap-2">
+          <button onClick={loadMore} disabled={loading} className="btn-secondary min-w-40">
             {loading ? (
-              <span className="flex items-center gap-3">
-                <svg
-                  className="animate-spin h-4 w-4 text-white"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Fetching Props...
-              </span>
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading
+              </>
             ) : (
-              "Load More Inventory"
+              "Load more"
             )}
           </button>
-        ) : totalCount > 12 ? (
-          /* Only show the "End of Vault" footer if the user actually 
-             had more than one page of content to scroll through. 
-          */
-          <div className="flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="h-px w-24 bg-linear-to-r from-transparent via-slate-200 to-transparent" />
-
-            <div className="text-center">
-              <p className="text-slate-400 font-serif italic text-sm">
-                You’ve reached the end
-              </p>
-              <button
-                onClick={scrollToTop}
-                className="mt-4 text-[10px] uppercase tracking-[0.2em] text-slate-500 font-bold hover:text-blue-600 transition-colors"
-              >
-                Back to Top ↑
-              </button>
-            </div>
-
-            <div className="h-px w-24 bg-linear-to-r from-transparent via-slate-200 to-transparent" />
-          </div>
-        ) : null}
-      </div>
+          <p className="text-xs text-neutral-500">
+            Showing {items.length} of {totalCount}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,10 @@ import PropFeed from "@/components/PropFeed";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import BrowseControls from "@/components/BrowseControls";
+import { buildPropFilter, getPropsPage } from "@/lib/props";
+import { formatLocation } from "@/lib/browse";
 
 export async function generateMetadata({
   searchParams,
@@ -16,10 +20,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { category, search } = await searchParams;
 
-  let title = "HV Prop Shop | Premium Rentals";
+  let title = "HV Prop Shop | Prop & set dressing rentals, Hudson Valley to NYC";
 
   if (search) {
-    title = `"${search}" Props | HV Prop Shop`;
+    title = `"${search}" | HV Prop Shop`;
   } else if (category) {
     const catName = category
       .split("-")
@@ -31,97 +35,68 @@ export async function generateMetadata({
   return {
     title,
     description:
-      "Browse our exclusive collection of high-end props for film and photography.",
+      "Rent props and set dressing from independent vendors across the Hudson Valley and New York City.",
   };
 }
 
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; search?: string }>;
+  searchParams: Promise<{ category?: string; search?: string; loc?: string; sort?: string }>;
 }) {
   const params = await searchParams;
   const selectedSlug = params.category;
   const searchQuery = params.search?.toLowerCase();
 
-  const andConditions = [];
+  const loc = params.loc || undefined;
+  const sort = params.sort || undefined;
+  const query = { category: selectedSlug, search: searchQuery, loc };
 
-  if (selectedSlug) {
-    andConditions.push({
-      _or: [
-        { category: { slug: { _eq: selectedSlug } } },
-        { category: { parent: { slug: { _eq: selectedSlug } } } },
-      ],
-    });
-  }
+  const [initialItems, categories, allItems, totalCountResponse] = await Promise.all([
+    getPropsPage({ ...query, sort }),
+    directus.request<Category[]>(
+      readItems("categories", {
+        fields: ["id", "name", "slug", { parent: ["id", "slug"] }],
+        limit: -1,
+      })
+    ),
+    // Every published item (lightweight) — for category counts, locations and stats
+    directus.request<Prop[]>(
+      readItems("props", {
+        fields: [
+          "id",
+          { category: ["id", "slug", { parent: ["id", "slug"] }] },
+          { user_created: ["id", "city", "state"] },
+        ],
+        filter: { status: { _eq: "published" } },
+        limit: -1,
+      })
+    ),
+    directus.request(
+      readItems("props", {
+        filter: buildPropFilter(query),
+        aggregate: { count: "*" },
+      })
+    ),
+  ]);
 
-  if (searchQuery) {
-    andConditions.push({
-      _or: [
-        { name: { _icontains: searchQuery } },
-        { description: { _icontains: searchQuery } },
-      ],
-    });
-  }
+  const vendorCount = new Set(allItems.map((i) => i.user_created?.id).filter(Boolean)).size;
+  const locations = [
+    ...new Set(
+      allItems
+        .map((i) => formatLocation(i.user_created?.city, i.user_created?.state))
+        .filter(Boolean)
+    ),
+  ].sort((a, b) => a.localeCompare(b));
 
-  const directusFilters =
-    andConditions.length > 0 ? { _and: andConditions } : {};
-
-  // 1. Initial Fetch
-  const [initialItems, categories, allItemsForTree, totalCountResponse] =
-    await Promise.all([
-      directus.request<Prop[]>(
-        readItems("props", {
-          fields: [
-            "id",
-            "name",
-            "price",
-            "thumbnail",
-            "description",
-            "status",
-            {
-              category: [
-                "id",
-                "name",
-                "slug",
-                { parent: ["id", "name", "slug"] },
-              ],
-            },
-          ],
-          filter: {
-            _and: [{ status: { _eq: "published" } }, directusFilters],
-          },
-          limit: 12,
-          offset: 0,
-          sort: ["-date_created"],
-        })
-      ),
-      directus.request<Category[]>(
-        readItems("categories", {
-          fields: ["id", "name", "slug", { parent: ["id", "slug"] }],
-          limit: -1,
-        })
-      ),
-      directus.request<Prop[]>(
-        readItems("props", {
-          fields: [
-            "id",
-            { category: ["id", "slug", { parent: ["id", "slug"] }] },
-          ],
-          filter: { status: { _eq: "published" } },
-          limit: -1,
-        })
-      ),
-      directus.request(
-        readItems("props", {
-          filter: { _and: [{ status: { _eq: "published" } }, directusFilters] },
-          aggregate: { count: "*" },
-        })
-      ),
-    ]);
+  // Category links keep the current location + sort
+  const keep = new URLSearchParams();
+  if (loc) keep.set("loc", loc);
+  if (sort) keep.set("sort", sort);
+  const keepQuery = keep.toString();
 
   const totalCount = parseInt(totalCountResponse[0].count as string);
-  const categoryTree = getCategoryTree(categories, allItemsForTree);
+  const categoryTree = getCategoryTree(categories, allItems);
 
   // 2. Breadcrumb Hierarchy Logic
   let breadcrumbParent = undefined;
@@ -143,117 +118,120 @@ export default async function HomePage({
     }
   }
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 md:px-6">
-      <div className="flex flex-col lg:flex-row lg:gap-10">
-        {/* SIDEBAR: Sticky positioning for desktop */}
-        <aside className="hidden lg:block w-64 shrink-0">
-          <div className="sticky top-16 pt-10 h-fit">
-            <CategorySidebar tree={categoryTree} selectedSlug={selectedSlug} />
-          </div>
-        </aside>
+  const heading = searchQuery
+    ? `Results for “${params.search}”`
+    : breadcrumbCurrent?.name ?? "All inventory";
 
-        <main className="flex-1 min-w-0">
-          {/* STICKY HEADER GROUP:
-            This container locks flush to the Header (top-16).
-            The background blocks items scrolling behind it.
-          */}
-          <div className="sticky top-16 z-20 bg-white -mx-4 px-4 md:mx-0 md:px-0 border-b border-slate-100 lg:border-none lg:pt-10 lg:pb-5">
-            <div className="lg:hidden">
-              <MobileCategoryBar
+  return (
+    <>
+      <section className="border-b border-neutral-200 bg-neutral-50">
+        <div className="container-page py-8 md:py-10">
+          <h1 className="max-w-2xl text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
+            Props and set dressing for film, TV and photo.
+          </h1>
+          <p className="mt-2 max-w-2xl text-neutral-600">
+            Rent directly from independent vendors across the Hudson Valley
+            and New York City.
+          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            <p className="text-neutral-700">
+              <span className="font-semibold tabular-nums">{allItems.length.toLocaleString()}</span>{" "}
+              items ·{" "}
+              <span className="font-semibold tabular-nums">{vendorCount}</span>{" "}
+              {vendorCount === 1 ? "vendor" : "vendors"}
+            </p>
+            <Link href="/vendors" className="link">
+              Browse vendors
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <div className="container-page">
+        <div className="flex flex-col lg:flex-row lg:gap-10">
+          <aside className="hidden w-56 shrink-0 lg:block">
+            <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto py-8">
+              <CategorySidebar
                 tree={categoryTree}
                 selectedSlug={selectedSlug}
+                keepQuery={keepQuery}
+                vendorCount={vendorCount}
               />
             </div>
-            <Breadcrumbs
-              parent={breadcrumbParent}
-              current={breadcrumbCurrent}
-              search={searchQuery}
-            />
-          </div>
+          </aside>
 
-          {/* CONTENT FEED */}
-          <div className="pt-4 pb-10 md:pt-4 lg:pt-0">
+          <div className="min-w-0 flex-1 py-6 lg:py-8">
+            <div className="mb-4 lg:hidden">
+              <MobileCategoryBar tree={categoryTree} selectedSlug={selectedSlug} keepQuery={keepQuery} />
+            </div>
+
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-x-4 gap-y-1 border-b border-neutral-200 pb-4">
+              <div className="min-w-0">
+                <Breadcrumbs
+                  parent={breadcrumbParent}
+                  current={breadcrumbCurrent}
+                  search={searchQuery}
+                />
+                <h2 className="mt-1 truncate text-lg font-semibold tracking-tight">
+                  {heading}
+                </h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <p className="text-sm text-neutral-500">
+                  {totalCount.toLocaleString()} {totalCount === 1 ? "item" : "items"}
+                </p>
+                <Suspense fallback={<div className="h-9 w-48 rounded-md bg-neutral-100" />}>
+                  <BrowseControls locations={locations} />
+                </Suspense>
+              </div>
+            </div>
+
             {initialItems.length > 0 ? (
               <PropFeed
-                key={`${selectedSlug}-${searchQuery}`}
+                key={`${selectedSlug}-${searchQuery}-${loc}-${sort}`}
                 initialItems={initialItems}
                 category={selectedSlug}
                 search={searchQuery}
+                loc={loc}
+                sort={sort}
                 totalCount={totalCount}
               />
             ) : (
-              <div className="text-center py-24 bg-slate-50 rounded-4xl border-2 border-dashed border-slate-200 flex flex-col items-center">
-                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-6 text-slate-400">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                  </svg>
-                </div>
-
-                <h3 className="text-xl font-serif italic text-slate-800 mb-2">
-                  No props found
-                </h3>
-
-                <p className="text-slate-500 text-sm max-w-sm px-6">
+              <div className="card flex flex-col items-center px-6 py-16 text-center">
+                <h3 className="text-base font-semibold">No items found</h3>
+                <p className="mt-1 max-w-sm text-sm text-neutral-600">
                   {searchQuery ? (
                     <>
-                      We couldn&apos;t find anything matching{" "}
-                      <span className="font-bold text-slate-900">
-                        &ldquo;{searchQuery}&rdquo;
-                      </span>
-                      {breadcrumbCurrent && (
-                        <>
-                          {" "}
-                          in{" "}
-                          <span className="font-bold text-slate-900">
-                            {breadcrumbCurrent.name}
-                          </span>
-                        </>
-                      )}
+                      Nothing matches &ldquo;{params.search}&rdquo;
+                      {breadcrumbCurrent && <> in {breadcrumbCurrent.name}</>}.
+                      Try a broader term.
                     </>
                   ) : (
                     <>
-                      There are currently no items available in the{" "}
-                      <span className="font-bold text-slate-900 uppercase tracking-tighter">
-                        {breadcrumbCurrent?.name || "selected"}
-                      </span>{" "}
-                      category.
+                      There&apos;s nothing listed in{" "}
+                      {breadcrumbCurrent?.name ?? "this category"}
+                      {loc && <> from {loc}</>} yet.
                     </>
                   )}
                 </p>
-
-                <div className="flex flex-col gap-4 mt-8">
+                <div className="mt-6 flex flex-wrap justify-center gap-2">
                   {selectedSlug && searchQuery && (
                     <Link
-                      href={`/?search=${searchQuery}`}
-                      className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700"
+                      href={`/?search=${encodeURIComponent(params.search ?? "")}`}
+                      className="btn-secondary"
                     >
-                      Search entire database instead
+                      Search all categories
                     </Link>
                   )}
-                  <Link
-                    href="/"
-                    className="text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white px-8 py-3 rounded-full hover:bg-blue-600 transition-colors"
-                  >
-                    Clear all filters
+                  <Link href="/" className="btn-primary">
+                    Clear filters
                   </Link>
                 </div>
               </div>
             )}
           </div>
-        </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
