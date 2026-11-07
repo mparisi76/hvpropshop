@@ -41,6 +41,10 @@ async function send(to: string | null | undefined, subject: string, html: string
 }
 
 const vendorEmail = (b: Booking) => b.prop_id?.user_created?.email;
+
+/** Private page showing the request's current status (and the Pay button once accepted). */
+export const bookingStatusUrl = (b: Booking) =>
+  b.payment_token ? `${siteUrl()}/pay/${b.id}?t=${encodeURIComponent(b.payment_token)}` : null;
 const shopName = (b: Booking) =>
   b.prop_id?.user_created?.shop_name || b.prop_id?.user_created?.first_name || "the vendor";
 
@@ -86,7 +90,14 @@ export function emailCustomerRequestReceived(b: Booking) {
     layout(
       "We've sent your request",
       `<p>Hi ${esc(b.customer_name)}, ${esc(shopName(b))} will confirm availability, usually within a day.
-       You won't be charged until they confirm and you pay.</p>${summary(b)}`
+       You won't be charged until they confirm and you pay.</p>${summary(b)}
+       ${(() => {
+         const url = bookingStatusUrl(b);
+         return url
+           ? `${button(url, "Check your request status")}
+              <p style="color:#737373">Bookmark this link. It shows where your request stands, and becomes your payment page once ${esc(shopName(b))} confirms.</p>`
+           : "";
+       })()}`
     ),
     CONTACT_EMAIL
   );

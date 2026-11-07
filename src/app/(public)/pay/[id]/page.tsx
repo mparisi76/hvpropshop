@@ -14,7 +14,7 @@ import {
 import PayButton from "./PayButton";
 
 export const metadata: Metadata = {
-  title: "Complete your booking | HV Prop Shop",
+  title: "Your booking request | HV Prop Shop",
   robots: { index: false },
 };
 
