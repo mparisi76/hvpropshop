@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { deleteFile, readMe, updateMe, uploadFiles, withToken } from "@directus/sdk";
 import directus from "@/lib/directus";
+import { updateMeFields } from "@/lib/directusUser";
 import { getActionToken } from "@/lib/actionSession";
 import { vendorWebsite } from "@/lib/vendors";
 import { Vendor } from "@/types";
@@ -60,7 +61,7 @@ export async function updateProfile(
 
   try {
     const me = await directus.request(withToken(token, readMe({ fields: ["id"] })));
-    await directus.request(withToken(token, updateMe(update)));
+    await directus.request(withToken(token, updateMeFields(update)));
 
     revalidatePath("/dashboard", "layout");
     revalidatePath("/vendors");
@@ -111,7 +112,7 @@ export async function updateShopLogo(formData: FormData): Promise<LogoState> {
     fd.append("title", "Shop logo");
     fd.append("file", file);
     const uploaded = await directus.request(withToken(token, uploadFiles(fd)));
-    await directus.request(withToken(token, updateMe({ shop_logo: uploaded.id })));
+    await directus.request(withToken(token, updateMeFields({ shop_logo: uploaded.id })));
     await deleteFileQuietly(token, previous);
     revalidateShop(id);
     return { success: "Logo updated.", logo: uploaded.id };
@@ -125,7 +126,7 @@ export async function removeShopLogo(): Promise<LogoState> {
   const token = await getActionToken();
   try {
     const { id, logo: previous } = await currentLogo(token);
-    await directus.request(withToken(token, updateMe({ shop_logo: null })));
+    await directus.request(withToken(token, updateMeFields({ shop_logo: null })));
     await deleteFileQuietly(token, previous);
     revalidateShop(id);
   } catch (error) {
