@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import Stripe from "stripe";
 import { BOOKING_STATUS, formatDate, getBooking, todayIso, tokenMatches } from "@/lib/bookings";
-import { siteUrl } from "@/lib/site";
+import { getSiteUrl } from "@/lib/baseUrl";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -15,6 +15,9 @@ export async function startCheckout(id: string, token: string): Promise<{ error?
   if (booking.status !== BOOKING_STATUS.accepted) return { error: "This booking can't be paid right now." };
   if (booking.end_date < todayIso()) return { error: "These dates have passed." };
   if (!booking.total || booking.total <= 0) return { error: "There's no amount due. Contact HV Prop Shop." };
+  if (booking.total < 0.5) return { error: "The amount is below the card minimum ($0.50). Contact HV Prop Shop." };
+
+  const base = await getSiteUrl();
 
   let url: string | null = null;
   try {
@@ -35,12 +38,13 @@ export async function startCheckout(id: string, token: string): Promise<{ error?
         },
       ],
       metadata: { inquiry_id: String(booking.id) },
-      success_url: `${siteUrl()}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl()}/pay/${booking.id}?t=${encodeURIComponent(token)}`,
+      success_url: `${base}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${base}/pay/${booking.id}?t=${encodeURIComponent(token)}`,
     });
     url = session.url;
   } catch (error) {
-    console.error("Stripe checkout error:", error);
+    const e = error as { type?: string; code?: string; message?: string };
+    console.error("Stripe checkout error:", e?.type, e?.code, e?.message ?? error);
     return { error: "Payment is unavailable right now. Please try again shortly." };
   }
 

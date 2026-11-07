@@ -9,7 +9,7 @@ import { getActionToken } from "@/lib/actionSession";
 import { getCurrentUser } from "@/lib/currentUser";
 import { BOOKING_STATUS, getAvailableUnits, getBooking } from "@/lib/bookings";
 import { emailCustomerAccepted, emailCustomerDeclined } from "@/lib/bookingEmails";
-import { siteUrl } from "@/lib/site";
+import { getSiteUrl } from "@/lib/baseUrl";
 
 type Result = { error?: string };
 
@@ -58,7 +58,7 @@ export async function acceptRequest(id: string): Promise<Result> {
     );
     await emailCustomerAccepted(
       { ...b, status: BOOKING_STATUS.accepted, payment_token: paymentToken },
-      `${siteUrl()}/pay/${b.id}?t=${paymentToken}`
+      `${await getSiteUrl()}/pay/${b.id}?t=${paymentToken}`
     );
   } catch (error) {
     if (isRedirect(error)) throw error;

@@ -6,6 +6,7 @@ import directus from "@/lib/directus";
 import { getPublishedPropsByIds } from "@/lib/props";
 import { vendorLocation, vendorName } from "@/lib/vendors";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { getSiteUrl } from "@/lib/baseUrl";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -60,7 +61,7 @@ export async function sendRequest(_prev: RequestState, formData: FormData): Prom
   if (items.length === 0) return fail("None of these items are available anymore.");
 
   const quantity = type === "quote" ? Math.max(1, parseInt(values.quantity) || 1) : null;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const siteUrl = await getSiteUrl();
   const itemSummary = items.map((i) => ({
     id: i.id,
     name: i.name,

@@ -1,5 +1,6 @@
 import { Resend } from "resend";
-import { CONTACT_EMAIL, siteUrl } from "@/lib/site";
+import { CONTACT_EMAIL } from "@/lib/site";
+import { getSiteUrl } from "@/lib/baseUrl";
 import { formatDate, formatMoney, type Booking } from "@/lib/bookings";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -43,14 +44,15 @@ async function send(to: string | null | undefined, subject: string, html: string
 const vendorEmail = (b: Booking) => b.prop_id?.user_created?.email;
 
 /** Private page showing the request's current status (and the Pay button once accepted). */
-export const bookingStatusUrl = (b: Booking) =>
-  b.payment_token ? `${siteUrl()}/pay/${b.id}?t=${encodeURIComponent(b.payment_token)}` : null;
+export const bookingStatusUrl = (b: Booking, base: string) =>
+  b.payment_token ? `${base}/pay/${b.id}?t=${encodeURIComponent(b.payment_token)}` : null;
 const shopName = (b: Booking) =>
   b.prop_id?.user_created?.shop_name || b.prop_id?.user_created?.first_name || "the vendor";
 
 /* ---------- To the vendor ---------- */
 
-export function emailVendorNewRequest(b: Booking) {
+export async function emailVendorNewRequest(b: Booking) {
+  const base = await getSiteUrl();
   const contact = [b.customer_name, b.production, b.customer_email, b.phone].filter(Boolean).join(" · ");
   return send(
     vendorEmail(b),
@@ -61,13 +63,14 @@ export function emailVendorNewRequest(b: Booking) {
        ${summary(b)}
        ${b.message ? `<p style="margin-top:16px"><strong>Notes:</strong><br>${esc(b.message).replace(/\n/g, "<br>")}</p>` : ""}
        <p>Nothing is charged until you accept and they pay.</p>
-       ${button(`${siteUrl()}/dashboard/requests`, "Accept or decline")}`
+       ${button(`${base}/dashboard/requests`, "Accept or decline")}`
     ),
     b.customer_email
   );
 }
 
-export function emailVendorPaid(b: Booking) {
+export async function emailVendorPaid(b: Booking) {
+  const base = await getSiteUrl();
   return send(
     vendorEmail(b),
     `Booked and paid: ${b.item_name}`,
@@ -75,7 +78,7 @@ export function emailVendorPaid(b: Booking) {
       "Booking confirmed and paid",
       `<p>${esc(b.customer_name)} has paid for:</p>${summary(b)}
        <p>Reply to this email to reach them about pickup and return.</p>
-       ${button(`${siteUrl()}/dashboard/requests`, "View booking")}`
+       ${button(`${base}/dashboard/requests`, "View booking")}`
     ),
     b.customer_email
   );
@@ -83,7 +86,8 @@ export function emailVendorPaid(b: Booking) {
 
 /* ---------- To the customer ---------- */
 
-export function emailCustomerRequestReceived(b: Booking) {
+export async function emailCustomerRequestReceived(b: Booking) {
+  const base = await getSiteUrl();
   return send(
     b.customer_email,
     `Request sent: ${b.item_name}`,
@@ -92,7 +96,7 @@ export function emailCustomerRequestReceived(b: Booking) {
       `<p>Hi ${esc(b.customer_name)}, ${esc(shopName(b))} will confirm availability, usually within a day.
        You won't be charged until they confirm and you pay.</p>${summary(b)}
        ${(() => {
-         const url = bookingStatusUrl(b);
+         const url = bookingStatusUrl(b, base);
          return url
            ? `${button(url, "Check your request status")}
               <p style="color:#737373">Bookmark this link. It shows where your request stands, and becomes your payment page once ${esc(shopName(b))} confirms.</p>`
@@ -103,7 +107,7 @@ export function emailCustomerRequestReceived(b: Booking) {
   );
 }
 
-export function emailCustomerAccepted(b: Booking, payUrl: string) {
+export async function emailCustomerAccepted(b: Booking, payUrl: string) {
   return send(
     b.customer_email,
     `Confirmed — complete your booking: ${b.item_name}`,
@@ -118,7 +122,8 @@ export function emailCustomerAccepted(b: Booking, payUrl: string) {
   );
 }
 
-export function emailCustomerDeclined(b: Booking) {
+export async function emailCustomerDeclined(b: Booking) {
+  const base = await getSiteUrl();
   return send(
     b.customer_email,
     `Not available: ${b.item_name}`,
@@ -127,7 +132,7 @@ export function emailCustomerDeclined(b: Booking) {
       `<p>Hi ${esc(b.customer_name)}, ${esc(shopName(b))} can't fulfil this request.</p>${summary(b)}
        ${b.decline_reason ? `<p><strong>Their note:</strong> ${esc(b.decline_reason)}</p>` : ""}
        <p>You haven't been charged.</p>
-       ${button(`${siteUrl()}/`, "Browse similar items")}`
+       ${button(`${base}/`, "Browse similar items")}`
     ),
     vendorEmail(b)
   );
