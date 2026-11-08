@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { readItems } from "@directus/sdk";
 import { asServer } from "@/lib/serverDirectus";
+import { businessToday } from "@/lib/site";
 
 /* ---------- Statuses (inquiries.status) ---------- */
 
@@ -113,7 +114,8 @@ export function bookingTotal(dailyRate: number, quantity: number, start: string,
   return Math.round(dailyRate * quantity * rentalDays(start, end) * 100) / 100;
 }
 
-export const todayIso = () => new Date().toISOString().slice(0, 10);
+/** Today in New York (the server runs in UTC, which is hours ahead in the evening). */
+export const todayIso = () => businessToday();
 
 export function formatDate(d: string | null | undefined) {
   if (!d) return "";

@@ -1,6 +1,7 @@
 // import { Prop } from '@/types';
 
 import { Category, CategoryTree, Prop } from "@/types";
+import { businessToday } from "@/lib/site";
 
 // lib/utils.ts
 
@@ -19,8 +20,8 @@ export interface Rental {
 export function getLiveAvailability(totalQuantity: number | null, rentals: Rental[] = []) {
   if (!totalQuantity) return 0;
   
-  // Get today's date in YYYY-MM-DD format (matches Directus date format)
-  const today = new Date().toISOString().split('T')[0];
+  // Today in New York, as YYYY-MM-DD (matches Directus date format)
+  const today = businessToday();
 
   const bookedUnits = rentals.reduce((acc, rental) => {
     const isConfirmed = rental.status === 'confirmed';

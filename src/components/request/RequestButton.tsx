@@ -4,6 +4,7 @@ import { useActionState, useCallback, useState } from "react";
 import { Check } from "lucide-react";
 import Drawer from "@/components/ui/Drawer";
 import { sendRequest, type RequestState, type RequestType } from "@/app/actions/sendRequest";
+import { businessToday } from "@/lib/site";
 
 export interface RequestButtonProps {
   type: RequestType;
@@ -53,7 +54,7 @@ function RequestForm({
   onDone,
 }: RequestButtonProps & { onDone: () => void }) {
   const [state, formAction, isPending] = useActionState<RequestState, FormData>(sendRequest, null);
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = businessToday();
   const v = { ...defaults, ...state?.values } as Record<string, string | undefined>;
 
   if (state?.success) {

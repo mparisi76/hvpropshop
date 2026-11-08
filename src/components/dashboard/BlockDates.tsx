@@ -5,6 +5,7 @@ import { CalendarX, Loader2, X } from "lucide-react";
 import Drawer from "@/components/ui/Drawer";
 import Select from "@/components/ui/Select";
 import { addBlock, removeBlock } from "@/app/(auth)/dashboard/blockActions";
+import { businessToday } from "@/lib/site";
 
 export interface BlockSummary {
   id: string;
@@ -18,7 +19,7 @@ const fmt = (d: string) =>
   new Date(`${d.slice(0, 10)}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 export function blockLabel(b: Pick<BlockSummary, "start_date" | "end_date">) {
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = businessToday();
   if (!b.end_date) return b.start_date <= today ? "Unavailable until further notice" : `Unavailable from ${fmt(b.start_date)}`;
   return b.start_date <= today ? `Unavailable until ${fmt(b.end_date)}` : `Unavailable ${fmt(b.start_date)}–${fmt(b.end_date)}`;
 }
@@ -67,7 +68,7 @@ function BlockForm({
   totalUnits: number;
   blocks: BlockSummary[];
 }) {
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = businessToday();
   const [start, setStart] = useState(today);
   const [end, setEnd] = useState("");
   const [indefinite, setIndefinite] = useState(false);

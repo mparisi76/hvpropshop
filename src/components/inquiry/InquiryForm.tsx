@@ -5,6 +5,7 @@ import { Check } from "lucide-react";
 import { Prop } from "@/types";
 import Select from "@/components/ui/Select";
 import { requestBooking, type BookingRequestState } from "@/app/actions/requestBooking";
+import { businessToday } from "@/lib/site";
 
 interface InquiryFormProps {
   item: Prop;
@@ -18,7 +19,7 @@ function rentalDays(start: string, end: string) {
 }
 
 export default function InquiryForm({ item, onClose }: InquiryFormProps) {
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = businessToday();
   const [state, formAction, isPending] = useActionState<BookingRequestState, FormData>(requestBooking, null);
 
   const v = state?.values ?? {};
