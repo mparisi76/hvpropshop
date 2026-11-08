@@ -10,8 +10,13 @@ import {
   rentalDays,
   todayIso,
   tokenMatches,
+  CANCELLATION_POLICY,
 } from "@/lib/bookings";
 import PayButton from "./PayButton";
+import CancelSection from "./CancelSection";
+import StatusRefresher from "./StatusRefresher";
+import { checkExistingCheckout } from "@/lib/payments";
+import { canCancel, refundFor } from "@/lib/cancellations";
 
 export const metadata: Metadata = {
   title: "Your booking request | HV Prop Shop",
@@ -27,8 +32,14 @@ export default async function PayPage({
 }) {
   const [{ id }, { t: token = "" }] = await Promise.all([params, searchParams]);
 
-  const booking = await getBooking(id).catch(() => null);
+  let booking = await getBooking(id).catch(() => null);
   if (!booking || !tokenMatches(booking.payment_token, token)) notFound();
+
+  // Paid in Stripe but the webhook hasn't landed yet? Record it now so we never ask twice.
+  if (booking.status === BOOKING_STATUS.accepted) {
+    const existing = await checkExistingCheckout(booking.id);
+    if (existing.state === "paid") booking = (await getBooking(id).catch(() => null)) ?? booking;
+  }
 
   const shop =
     booking.prop_id?.user_created?.shop_name || booking.prop_id?.user_created?.first_name || "The vendor";
@@ -40,13 +51,34 @@ export default async function PayPage({
     notice = { title: "You're booked", body: "This booking is paid and confirmed. Check your email for the receipt." };
   } else if (booking.status === BOOKING_STATUS.pending) {
     notice = { title: "Waiting for confirmation", body: `${shop} hasn't confirmed this request yet. We'll email you when they do.` };
-  } else if (booking.status === BOOKING_STATUS.declined || booking.status === BOOKING_STATUS.cancelled) {
+  } else if (booking.status === BOOKING_STATUS.cancelled) {
+    notice = {
+      title: "Booking cancelled",
+      body: "This booking was cancelled. If you'd paid, any refund goes back to your original card within 5–10 business days.",
+    };
+  } else if (booking.status === BOOKING_STATUS.declined) {
     notice = { title: "No longer available", body: "This request can't be booked. You haven't been charged." };
   } else if (expired) {
     notice = { title: "These dates have passed", body: "This booking can no longer be paid. You haven't been charged." };
   }
 
   const thumb = booking.prop_id?.thumbnail;
+
+  // What cancelling right now would mean for the customer
+  let cancelOutcome: string | null = null;
+  if (canCancel(booking, "customer")) {
+    if (booking.status !== BOOKING_STATUS.paid) {
+      cancelOutcome = "You haven't paid, so you can cancel at no cost.";
+    } else {
+      const { percent, amount } = refundFor(booking, "customer");
+      cancelOutcome =
+        percent === 100
+          ? `If you cancel now, you'll be refunded ${formatMoney(amount)} in full.`
+          : percent === 50
+            ? `Pickup is less than 3 days away, so cancelling now refunds 50% (${formatMoney(amount)}).`
+            : "Pickup is today, so cancelling now isn't refundable.";
+    }
+  }
 
   return (
     <div className="container-page max-w-lg! py-10">
@@ -55,7 +87,10 @@ export default async function PayPage({
         {notice ? notice.title : "Complete your booking"}
       </h1>
       {notice ? (
-        <p className="mt-2 text-sm text-neutral-600">{notice.body}</p>
+        <>
+          <p className="mt-2 text-sm text-neutral-600">{notice.body}</p>
+          {booking.status === BOOKING_STATUS.pending && <StatusRefresher />}
+        </>
       ) : (
         <p className="mt-2 text-sm text-neutral-600">{shop} confirmed it&apos;s available. Pay to lock it in.</p>
       )}
@@ -96,6 +131,17 @@ export default async function PayPage({
           <PayButton id={String(booking.id)} token={token} label={`Pay ${formatMoney(booking.total)}`} />
         </div>
       )}
+
+      {(!notice || booking.status === BOOKING_STATUS.paid) && (
+        <p className="mt-4 text-xs text-neutral-500">
+          <span className="font-medium text-neutral-700">Cancellation policy:</span> {CANCELLATION_POLICY}{" "}
+          <Link href="/policies" className="underline underline-offset-2 hover:text-neutral-900">
+            All rental policies
+          </Link>
+        </p>
+      )}
+
+      {cancelOutcome && <CancelSection id={String(booking.id)} token={token} outcome={cancelOutcome} />}
     </div>
   );
 }

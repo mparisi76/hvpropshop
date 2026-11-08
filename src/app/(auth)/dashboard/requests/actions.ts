@@ -9,20 +9,27 @@ import { getActionToken } from "@/lib/actionSession";
 import { getCurrentUser } from "@/lib/currentUser";
 import { BOOKING_STATUS, getAvailableUnits, getBooking } from "@/lib/bookings";
 import { emailCustomerAccepted, emailCustomerDeclined } from "@/lib/bookingEmails";
+import { cancelBooking } from "@/lib/cancellations";
 import { getSiteUrl } from "@/lib/baseUrl";
 
 type Result = { error?: string };
 
 /** The booking, only if it's for one of the logged-in vendor's items. */
-async function ownedPendingBooking(id: string) {
+async function ownedBooking(id: string) {
   await getActionToken(); // renews the session if needed
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
   const booking = await getBooking(id);
   if (!booking || booking.prop_id?.user_created?.id !== user.id) return { error: "Request not found." } as const;
-  if (booking.status !== BOOKING_STATUS.pending) return { error: "This request was already answered." } as const;
   return { booking } as const;
+}
+
+async function ownedPendingBooking(id: string) {
+  const found = await ownedBooking(id);
+  if ("error" in found) return found;
+  if (found.booking.status !== BOOKING_STATUS.pending) return { error: "This request was already answered." } as const;
+  return found;
 }
 
 export async function acceptRequest(id: string): Promise<Result> {
@@ -88,6 +95,23 @@ export async function declineRequest(id: string, reason: string): Promise<Result
     if (isRedirect(error)) throw error;
     console.error("Decline request error:", error);
     return { error: "Couldn't decline the request. Please try again." };
+  }
+
+  revalidatePath("/dashboard", "layout");
+  return {};
+}
+
+/** Vendor cancels an accepted or paid booking — always a full refund. */
+export async function cancelAsVendor(id: string, reason: string): Promise<Result> {
+  try {
+    const found = await ownedBooking(id);
+    if ("error" in found) return { error: found.error };
+    const result = await cancelBooking(found.booking, "vendor", reason);
+    if (result.error) return { error: result.error };
+  } catch (error) {
+    if (isRedirect(error)) throw error;
+    console.error("Vendor cancel error:", error);
+    return { error: "Couldn't cancel the booking. Please try again." };
   }
 
   revalidatePath("/dashboard", "layout");

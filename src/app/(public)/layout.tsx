@@ -111,9 +111,14 @@ export default async function PublicLayout({
           </div>
         </div>
         <div className="border-t border-neutral-200">
-          <p className="container-page py-4 text-xs text-neutral-500">
-            © {new Date().getFullYear()} HV Prop Shop
-          </p>
+          <div className="container-page flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-4 text-xs text-neutral-500">
+            <p>© {new Date().getFullYear()} HV Prop Shop</p>
+            <nav aria-label="Policies" className="flex flex-wrap gap-x-5 gap-y-1">
+              <Link href="/policies" className="hover:text-neutral-900">Rental policies</Link>
+              <Link href="/terms" className="hover:text-neutral-900">Terms</Link>
+              <Link href="/privacy" className="hover:text-neutral-900">Privacy</Link>
+            </nav>
+          </div>
         </div>
       </footer>
     </>

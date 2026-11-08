@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
-import Stripe from "stripe";
 import { getBooking } from "@/lib/bookings";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { recordPayment, stripe } from "@/lib/payments";
 
 export default async function SuccessPage({
   searchParams,
@@ -15,6 +13,9 @@ export default async function SuccessPage({
   // 1. Get the session details from Stripe
   const session = await stripe.checkout.sessions.retrieve(session_id);
   const inquiryId = session.metadata?.inquiry_id;
+
+  // Record the booking now rather than waiting for Stripe's webhook (whichever comes first wins)
+  await recordPayment(session).catch((error) => console.error("[success] Couldn't record payment:", error));
 
 
   // 2. Item name from the booking (read with the server token — bookings aren't public)

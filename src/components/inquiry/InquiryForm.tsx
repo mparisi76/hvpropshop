@@ -6,6 +6,7 @@ import { Prop } from "@/types";
 import Select from "@/components/ui/Select";
 import { requestBooking, type BookingRequestState } from "@/app/actions/requestBooking";
 import { businessToday } from "@/lib/site";
+import { CANCELLATION_POLICY } from "@/lib/policy";
 
 interface InquiryFormProps {
   item: Prop;
@@ -186,9 +187,23 @@ export default function InquiryForm({ item, onClose }: InquiryFormProps) {
         />
       </div>
 
-      <button disabled={isPending} className="btn-accent h-11! w-full">
-        {isPending ? "Sending…" : "Send request"}
-      </button>
+      <div className="space-y-2">
+        <button disabled={isPending} className="btn-accent h-11! w-full">
+          {isPending ? "Sending…" : "Send request"}
+        </button>
+        <p className="text-xs text-neutral-500">
+          <span className="font-medium text-neutral-700">Cancellation policy:</span> {CANCELLATION_POLICY}{" "}
+          By sending a request you agree to our{" "}
+          <a href="/policies" target="_blank" className="underline underline-offset-2 hover:text-neutral-900">
+            rental policies
+          </a>{" "}
+          and{" "}
+          <a href="/terms" target="_blank" className="underline underline-offset-2 hover:text-neutral-900">
+            terms
+          </a>
+          .
+        </p>
+      </div>
     </form>
   );
 }

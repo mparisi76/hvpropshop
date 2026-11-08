@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { Loader2, Lock } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { startCheckout } from "./actions";
 
 export default function PayButton({ id, token, label }: { id: string; token: string; label: string }) {
+  const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +19,8 @@ export default function PayButton({ id, token, label }: { id: string; token: str
           start(async () => {
             setError(null);
             const result = await startCheckout(id, token);
-            if (result?.error) setError(result.error);
+            if (result?.paid) router.refresh(); // already paid — show the "You're booked" state
+            else if (result?.error) setError(result.error);
           })
         }
         className="btn-accent h-11! w-full"

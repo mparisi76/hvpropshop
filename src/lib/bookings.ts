@@ -43,7 +43,14 @@ export interface BookingProp {
   thumbnail: string | null;
   price: number | null;
   quantity_available: number | null;
-  user_created: { id: string; email: string | null; shop_name: string | null; first_name: string | null } | null;
+  user_created: {
+    id: string;
+    email: string | null;
+    shop_name: string | null;
+    first_name: string | null;
+    city?: string | null;
+    state?: string | null;
+  } | null;
 }
 
 /** An inquiry row as stored: prop_id is the item's id as text. */
@@ -80,7 +87,7 @@ async function withProps(rows: RawBooking[]): Promise<Booking[]> {
             "thumbnail",
             "price",
             "quantity_available",
-            { user_created: ["id", "email", "shop_name", "first_name"] },
+            { user_created: ["id", "email", "shop_name", "first_name", "city", "state"] },
           ],
           filter: { id: { _in: ids } },
           limit: -1,
@@ -135,6 +142,27 @@ export function tokenMatches(expected: string | null | undefined, given: string 
   const a = Buffer.from(expected);
   const b = Buffer.from(given);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/* ---------- Cancellation policy ---------- */
+
+/** Shown wherever customers book or manage a booking. */
+export { CANCELLATION_POLICY } from "@/lib/policy";
+
+/** Whole days from today (New York) until a YYYY-MM-DD date. */
+export function daysUntil(date: string) {
+  return Math.round(
+    (new Date(`${date.slice(0, 10)}T00:00:00Z`).getTime() - new Date(`${todayIso()}T00:00:00Z`).getTime()) /
+      86_400_000
+  );
+}
+
+/** Percent of the amount paid that a customer gets back if they cancel today. */
+export function customerRefundPercent(startDate: string): 0 | 50 | 100 {
+  const days = daysUntil(startDate);
+  if (days >= 3) return 100;
+  if (days >= 1) return 50;
+  return 0;
 }
 
 /* ---------- Availability ---------- */
@@ -227,6 +255,15 @@ export async function getPendingCount(vendorId: string) {
   } catch {
     return 0;
   }
+}
+
+/** Bookings matching a Directus filter, with their items attached (for scheduled jobs). */
+export async function findBookings(filter: Record<string, unknown>, limit = 500) {
+  const rows = (await asServer(
+    readItems("inquiries", { fields: [...BOOKING_FIELDS, "responded_at"], filter, limit })
+  )) as unknown as (RawBooking & { responded_at: string | null })[];
+  const withItems = await withProps(rows);
+  return withItems.map((b, i) => ({ ...b, responded_at: rows[i].responded_at }));
 }
 
 /** A single booking (server access — check ownership/token before using). */
