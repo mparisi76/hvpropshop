@@ -6,19 +6,16 @@ import { ChevronDown, Store } from "lucide-react";
 import { CategoryTree } from "@/types";
 import { categoryHref } from "@/lib/browse";
 import { usePendingCategory } from "@/components/browse/usePendingCategory";
+import { useBrowseLocation } from "@/components/browse/useBrowseLocation";
 
 export default function CategorySidebar({
   tree,
-  selectedSlug,
-  keepQuery = "",
   vendorCount,
 }: {
   tree: CategoryTree;
-  selectedSlug?: string;
-  /** Query params (e.g. loc, sort) to carry over when switching category */
-  keepQuery?: string;
   vendorCount?: number;
 }) {
+  const { selectedSlug, keepQuery } = useBrowseLocation();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(
     () => {
       const initialOpen: Record<string, boolean> = {};
@@ -79,7 +76,9 @@ export default function CategorySidebar({
 
       <ul className="mt-1 space-y-0.5">
         {sortedParents.map((parent) => {
-          const isOpen = openSections[parent.slug];
+          // Open if toggled open, or if the current category is one of its subcategories
+          const isOpen =
+            openSections[parent.slug] || Object.values(parent.children).some((c) => c.slug === activeSlug);
           const isActive = activeSlug === parent.slug;
           const hasChildren = Object.keys(parent.children).length > 0;
           const sortedChildren = Object.values(parent.children).sort((a, b) =>

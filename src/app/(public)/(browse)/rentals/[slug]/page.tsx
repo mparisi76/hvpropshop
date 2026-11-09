@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import BrowseView from "@/components/browse/BrowseView";
 import JsonLd from "@/components/JsonLd";
@@ -48,41 +47,28 @@ export default async function CategoryPage({ params, searchParams }: { params: P
   ];
 
   return (
-    <BrowseView
-      category={slug}
-      search={query.search}
-      loc={query.loc}
-      sort={query.sort}
-      hero={
-        <>
-          <JsonLd
-            data={{
-              "@context": "https://schema.org",
-              "@type": "BreadcrumbList",
-              itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, item: c.url })),
-            }}
-          />
-          <section className="border-b border-neutral-200 bg-neutral-50">
-            <div className="container-page py-8 md:py-10">
-              {parent && (
-                <Link href={categoryPath(parent.slug)} className="eyebrow hover:text-neutral-900">
-                  {parent.name}
-                </Link>
-              )}
-              <h1 className="mt-1 max-w-2xl text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
-                {current.name} rentals
-              </h1>
-              <p className="mt-2 max-w-2xl text-neutral-600">
-                {current.count > 0
-                  ? `${current.count.toLocaleString()} ${current.name.toLowerCase()} ${
-                      current.count === 1 ? "piece" : "pieces"
-                    } to rent for film, TV and photo, from independent vendors across the Hudson Valley and New York City.`
-                  : `Nothing listed in ${current.name.toLowerCase()} yet. Check back soon, or browse everything.`}
-              </p>
-            </div>
-          </section>
-        </>
-      }
-    />
+    <>
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, item: c.url })),
+        }}
+      />
+      <BrowseView
+        category={slug}
+        search={query.search}
+        loc={query.loc}
+        sort={query.sort}
+        title={`${current.name} rentals`}
+        intro={
+          current.count > 0
+            ? `${current.count.toLocaleString()} ${current.name.toLowerCase()} ${
+                current.count === 1 ? "piece" : "pieces"
+              } to rent for film, TV and photo, from independent vendors across the Hudson Valley and New York City.`
+            : `Nothing listed in ${current.name.toLowerCase()} yet. Check back soon, or browse everything.`
+        }
+      />
+    </>
   );
 }

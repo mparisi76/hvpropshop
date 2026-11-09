@@ -4,12 +4,10 @@ import Link from "next/link";
 import { CategoryTree } from "@/types";
 import { categoryHref } from "@/lib/browse";
 import { usePendingCategory } from "@/components/browse/usePendingCategory";
+import { useBrowseLocation } from "@/components/browse/useBrowseLocation";
 
 interface MobileCategoryBarProps {
   tree: CategoryTree;
-  selectedSlug?: string;
-  /** Query params (e.g. loc, sort) to carry over when switching category */
-  keepQuery?: string;
 }
 
 const chip = (active: boolean) =>
@@ -19,11 +17,8 @@ const chip = (active: boolean) =>
       : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
   }`;
 
-export default function MobileCategoryBar({
-  tree,
-  selectedSlug,
-  keepQuery = "",
-}: MobileCategoryBarProps) {
+export default function MobileCategoryBar({ tree }: MobileCategoryBarProps) {
+  const { selectedSlug, keepQuery } = useBrowseLocation();
   const sortedParents = Object.values(tree).sort((a, b) =>
     a.name.localeCompare(b.name)
   );

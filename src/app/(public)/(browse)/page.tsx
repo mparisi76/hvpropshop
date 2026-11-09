@@ -31,60 +31,52 @@ export default async function HomePage({ searchParams }: { searchParams: SearchP
   const isPlain = !params.search && !params.loc;
 
   return (
-    <BrowseView
-      search={params.search}
-      loc={params.loc}
-      sort={params.sort}
-      hero={
-        <>
-          {isPlain && (
-            <JsonLd
-              data={[
-                {
-                  "@context": "https://schema.org",
-                  "@type": "Organization",
-                  name: SITE_NAME,
-                  url: absoluteUrl("/"),
-                  logo: absoluteUrl("/opengraph-image"),
-                  description: DEFAULT_DESCRIPTION,
-                  areaServed: ["Hudson Valley, NY", "New York, NY"],
-                },
-                {
-                  "@context": "https://schema.org",
-                  "@type": "WebSite",
-                  name: SITE_NAME,
-                  url: absoluteUrl("/"),
-                  potentialAction: {
-                    "@type": "SearchAction",
-                    target: `${absoluteUrl("/")}?search={search_term_string}`,
-                    "query-input": "required name=search_term_string",
-                  },
-                },
-              ]}
-            />
-          )}
-          <section className="border-b border-neutral-200 bg-neutral-50">
-            <div className="container-page py-8 md:py-10">
-              <h1 className="max-w-2xl text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
-                Props and set dressing for film, TV and photo.
-              </h1>
-              <p className="mt-2 max-w-2xl text-neutral-600">
-                Rent directly from independent vendors across the Hudson Valley and New York City.
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                <p className="text-neutral-700">
-                  <span className="font-semibold tabular-nums">{catalog.itemCount.toLocaleString()}</span> items ·{" "}
-                  <span className="font-semibold tabular-nums">{catalog.vendorCount}</span>{" "}
-                  {catalog.vendorCount === 1 ? "vendor" : "vendors"}
-                </p>
-                <Link href="/vendors" className="link">Browse vendors</Link>
-                <Link href="/prop-rentals" className="link">Browse by town</Link>
-                <Link href="/how-it-works" className="link">How it works</Link>
-              </div>
-            </div>
-          </section>
-        </>
-      }
-    />
+    <>
+      {isPlain && (
+        <JsonLd
+          data={[
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: SITE_NAME,
+              url: absoluteUrl("/"),
+              logo: absoluteUrl("/opengraph-image"),
+              description: DEFAULT_DESCRIPTION,
+              areaServed: ["Hudson Valley, NY", "New York, NY"],
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: SITE_NAME,
+              url: absoluteUrl("/"),
+              potentialAction: {
+                "@type": "SearchAction",
+                target: `${absoluteUrl("/")}?search={search_term_string}`,
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ]}
+        />
+      )}
+      <BrowseView
+        search={params.search}
+        loc={params.loc}
+        sort={params.sort}
+        title="Props and set dressing for film, TV and photo."
+        intro="Rent directly from independent vendors across the Hudson Valley and New York City."
+        extra={
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            <p className="text-neutral-700">
+              <span className="font-semibold tabular-nums">{catalog.itemCount.toLocaleString()}</span> items ·{" "}
+              <span className="font-semibold tabular-nums">{catalog.vendorCount}</span>{" "}
+              {catalog.vendorCount === 1 ? "vendor" : "vendors"}
+            </p>
+            <Link href="/vendors" className="link">Browse vendors</Link>
+            <Link href="/prop-rentals" className="link">Browse by town</Link>
+            <Link href="/how-it-works" className="link">How it works</Link>
+          </div>
+        }
+      />
+    </>
   );
 }
