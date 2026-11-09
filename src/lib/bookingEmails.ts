@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { getSiteUrl } from "@/lib/baseUrl";
+import { reportError } from "@/lib/alerts";
 import { formatDate, formatMoney, type Booking } from "@/lib/bookings";
 import { CANCELLATION_POLICY, PLATFORM_FEE_RATE, vendorShare } from "@/lib/policy";
 
@@ -39,9 +40,9 @@ async function send(to: string | null | undefined, subject: string, html: string
   if (!to) return;
   try {
     const { error } = await resend.emails.send({ from: FROM, to, subject, html, replyTo: replyTo || undefined });
-    if (error) console.error(`[email] "${subject}" to ${to} failed:`, error);
+    if (error) await reportError("Booking email failed to send", error, { subject, to });
   } catch (error) {
-    console.error(`[email] "${subject}" to ${to} failed:`, error);
+    await reportError("Booking email failed to send", error, { subject, to });
   }
 }
 

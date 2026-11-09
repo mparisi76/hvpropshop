@@ -12,6 +12,7 @@ import {
   todayIso,
 } from "@/lib/bookings";
 import { emailCustomerRequestReceived, emailVendorNewRequest } from "@/lib/bookingEmails";
+import { reportError } from "@/lib/alerts";
 
 export type BookingRequestState = {
   success?: boolean;
@@ -96,7 +97,11 @@ export async function requestBooking(
       await Promise.all([emailVendorNewRequest(booking), emailCustomerRequestReceived(booking)]);
     }
   } catch (error) {
-    console.error("Booking request error:", error);
+    await reportError("A customer's booking request failed", error, {
+      item: propId,
+      customer: values.email,
+      dates: `${values.start} → ${values.end}`,
+    });
     return fail("We couldn't send your request. Please try again.");
   }
 

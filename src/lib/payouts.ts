@@ -4,6 +4,7 @@ import { stripe } from "@/lib/payments";
 import { PLATFORM_FEE_RATE, vendorShare } from "@/lib/policy";
 import { formatDate, formatMoney, todayIso } from "@/lib/bookings";
 import { emailVendorPayoutSent } from "@/lib/bookingEmails";
+import { reportError } from "@/lib/alerts";
 
 export { PLATFORM_FEE_RATE, vendorShare };
 
@@ -140,7 +141,13 @@ export async function sendDuePayouts() {
       const account = await getPayoutAccountStatus(vendor.id);
       if (!account.ready || !account.accountId) {
         result.skipped++;
-        console.warn(`[payouts] Vendor ${vendor.id} isn't set up for payouts yet; rental ${rental.id} stays pending`);
+        await reportError("Payout waiting: vendor's Stripe isn't ready", new Error("Stripe account not ready for payouts"), {
+          vendor: vendor.shop_name || vendor.first_name || vendor.id,
+          email: vendor.email,
+          rental: rental.id,
+          amount,
+          note: "Ask the vendor to finish Stripe setup (Shop → Payouts). It will be paid automatically once they do.",
+        });
         continue;
       }
 
@@ -177,7 +184,12 @@ export async function sendDuePayouts() {
       result.paid++;
     } catch (error) {
       result.errors++;
-      console.error(`[payouts] Payout for rental ${rental.id} failed:`, error);
+      await reportError("Vendor payout failed", error, {
+        rental: rental.id,
+        vendor: rental.prop_id?.user_created?.shop_name ?? rental.prop_id?.user_created?.id,
+        amount: rental.payout_amount,
+        note: "It stays pending and will be retried by tomorrow's daily job.",
+      });
     }
   }
   return result;

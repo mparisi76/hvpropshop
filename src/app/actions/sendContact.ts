@@ -2,6 +2,7 @@
 
 import { Resend } from "resend";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { reportError } from "@/lib/alerts";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -42,7 +43,7 @@ export async function sendContact(_prev: ContactState, formData: FormData): Prom
     });
     if (error) throw error;
   } catch (error) {
-    console.error("Contact form error:", error);
+    await reportError("Contact form message failed to send", error, { from: values.email, topic: values.topic });
     return { error: `We couldn't send your message. Please email ${CONTACT_EMAIL} instead.`, values };
   }
   return { success: true };

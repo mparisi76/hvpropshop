@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { getBooking } from "@/lib/bookings";
 import { recordPayment, stripe } from "@/lib/payments";
+import { reportError } from "@/lib/alerts";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Booking confirmed | HV Prop Shop", robots: { index: false, follow: false } };
@@ -18,7 +19,13 @@ export default async function SuccessPage({
   const inquiryId = session.metadata?.inquiry_id;
 
   // Record the booking now rather than waiting for Stripe's webhook (whichever comes first wins)
-  await recordPayment(session).catch((error) => console.error("[success] Couldn't record payment:", error));
+  await recordPayment(session).catch((error) =>
+    reportError("Couldn't record payment from the success page", error, {
+      booking: session.metadata?.inquiry_id,
+      stripeSession: session.id,
+      note: "The Stripe webhook should still record it; check the booking if another alert follows.",
+    })
+  );
 
 
   // 2. Item name from the booking (read with the server token — bookings aren't public)

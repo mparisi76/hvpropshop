@@ -4,6 +4,7 @@ import { asServer } from "@/lib/serverDirectus";
 import { BOOKING_STATUS, getBooking, type Booking } from "@/lib/bookings";
 import { emailCustomerBooked, emailVendorPaid } from "@/lib/bookingEmails";
 import { vendorShare } from "@/lib/policy";
+import { reportError } from "@/lib/alerts";
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -69,7 +70,11 @@ async function doRecord(
         { idempotencyKey: `late-payment-${id}` }
       );
     }
-    console.warn(`[payments] Payment for booking ${id} arrived while it was "${booking.status}" — refunded`);
+    await reportError("Late payment auto-refunded", new Error(`Booking was "${booking.status}" when payment arrived`), {
+      booking: id,
+      stripeSession: session.id,
+      note: "No action needed: the customer was refunded in full. You may want to contact them.",
+    });
     return "refunded";
   }
 
@@ -110,7 +115,13 @@ async function doRecord(
         payout_status: "pending",
         payout_amount: vendorShare((session.amount_total || 0) / 100),
       })
-    ).catch((error) => console.error(`[payments] Couldn't set payout on rental ${rentalId}:`, error));
+    ).catch((error) =>
+      reportError("Booking paid but vendor payout NOT scheduled", error, {
+        rental: rentalId,
+        booking: id,
+        note: "Set payout_status = pending and payout_amount on this rental in Directus.",
+      })
+    );
   }
 
   await asServer(updateItem("inquiries", booking.id, { status: BOOKING_STATUS.paid }));

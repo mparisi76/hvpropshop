@@ -4,6 +4,7 @@ import { BOOKING_STATUS, customerRefundPercent, todayIso, type Booking } from "@
 import { emailBookingCancelled } from "@/lib/bookingEmails";
 import { stripe } from "@/lib/payments";
 import { vendorShare } from "@/lib/policy";
+import { reportError } from "@/lib/alerts";
 
 /** Vendors and admins always refund in full; customers follow the policy. */
 export type CancelledBy = "vendor" | "customer" | "admin";
@@ -86,7 +87,12 @@ export async function cancelBooking(
         { idempotencyKey: `cancel-booking-${b.id}` }
       );
     } catch (error) {
-      console.error(`[cancel] Refund failed for booking ${b.id}:`, error);
+      await reportError("Refund failed — booking NOT cancelled", error, {
+        booking: b.id,
+        cancelledBy: by,
+        amount,
+        paymentIntent: rental?.stripe_payment_id,
+      });
       await asServer(updateItem("inquiries", b.id, { status: b.status, refund_amount: null })).catch(() => {});
       return { error: "The refund couldn't be processed, so the booking is still active. Please try again." };
     }
@@ -102,7 +108,13 @@ export async function cancelBooking(
         payout_status: kept > 0 ? "pending" : "none",
         payout_amount: kept > 0 ? vendorShare(kept) : 0,
       })
-    ).catch((error) => console.error(`[cancel] Couldn't release rental ${rental.id}:`, error));
+    ).catch((error) =>
+      reportError("Booking cancelled and refunded, but its dates are still blocked", error, {
+        booking: b.id,
+        rental: rental.id,
+        note: 'Set this rental\'s status to "cancelled" in Directus.',
+      })
+    );
   }
 
   await emailBookingCancelled({ ...b, status: BOOKING_STATUS.cancelled }, by, amount, note, b.status === BOOKING_STATUS.paid);

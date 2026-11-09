@@ -5,6 +5,7 @@ import { Resend } from "resend";
 import { asServer } from "@/lib/serverDirectus";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { getSiteUrl } from "@/lib/baseUrl";
+import { reportError } from "@/lib/alerts";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = "HV Prop Shop <onboarding@hvpropshop.com>";
@@ -73,7 +74,13 @@ export async function applyAsVendor(_prev: ApplyState, formData: FormData): Prom
     }),
   ]);
   const adminEmailed = results[0].status === "fulfilled" && !results[0].value.error;
-  if (!adminEmailed) console.error("[apply] Admin notification failed:", results[0]);
+  if (!adminEmailed) {
+    await reportError(
+      "Vendor application email failed",
+      results[0].status === "rejected" ? results[0].reason : results[0].value.error,
+      { shop: values.shop_name, email: values.email, savedToDirectus: saved }
+    );
+  }
 
   if (!saved && !adminEmailed) {
     return { error: `We couldn't send your application. Please email ${CONTACT_EMAIL} instead.`, values };

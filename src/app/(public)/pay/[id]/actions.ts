@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cancelBooking } from "@/lib/cancellations";
 import { BOOKING_STATUS, formatDate, getBooking, todayIso, tokenMatches } from "@/lib/bookings";
 import { getSiteUrl } from "@/lib/baseUrl";
+import { reportError } from "@/lib/alerts";
 import { checkExistingCheckout, saveCheckoutSessionId, stripe } from "@/lib/payments";
 
 /** `paid: true` means it turned out to be paid already — refresh the page. */
@@ -56,7 +57,11 @@ export async function startCheckout(id: string, token: string): Promise<{ error?
     await saveCheckoutSessionId(booking.id, session.id);
   } catch (error) {
     const e = error as { type?: string; code?: string; message?: string };
-    console.error("Stripe checkout error:", e?.type, e?.code, e?.message ?? error);
+    await reportError("Customer couldn't start checkout", error, {
+      booking: booking.id,
+      amount: booking.total,
+      stripe: [e?.type, e?.code].filter(Boolean).join(" "),
+    });
     return { error: "Payment is unavailable right now. Please try again shortly." };
   }
 
@@ -72,7 +77,7 @@ export async function cancelAsCustomer(id: string, token: string): Promise<{ err
     const result = await cancelBooking(booking, "customer", "");
     if (result.error) return { error: result.error };
   } catch (error) {
-    console.error("Customer cancel error:", error);
+    await reportError("Customer couldn't cancel their booking", error, { booking: id });
     return { error: "Couldn't cancel. Please try again or contact HV Prop Shop." };
   }
   revalidatePath(`/pay/${id}`);

@@ -7,6 +7,7 @@ import { getPublishedPropsByIds } from "@/lib/props";
 import { vendorLocation, vendorName } from "@/lib/vendors";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { getSiteUrl } from "@/lib/baseUrl";
+import { reportError } from "@/lib/alerts";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -109,7 +110,7 @@ export async function sendRequest(_prev: RequestState, formData: FormData): Prom
     );
     saved = true;
   } catch (error) {
-    console.error('Request not saved to Directus (does the "requests" collection exist?):', error);
+    await reportError("Pull-list/quote request not saved to Directus", error, { customer: values.email });
   }
 
   /* 2. Email HV Prop Shop */
@@ -161,10 +162,10 @@ export async function sendRequest(_prev: RequestState, formData: FormData): Prom
       subject: `${title}: ${values.production || values.name} (${items.length} ${items.length === 1 ? "item" : "items"})`,
       html,
     });
-    if (error) console.error("Request email failed:", error);
+    if (error) await reportError("Pull-list/quote request email failed", error, { customer: values.email });
     else emailed = true;
   } catch (error) {
-    console.error("Request email failed:", error);
+    await reportError("Pull-list/quote request email failed", error, { customer: values.email });
   }
 
   if (!saved && !emailed) return fail("We couldn't send your request. Please try again or email us directly.");

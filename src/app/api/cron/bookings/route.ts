@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runDailyBookingJobs } from "@/lib/bookingJobs";
+import { reportError } from "@/lib/alerts";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,9 @@ export async function GET(req: Request) {
   try {
     return NextResponse.json(await runDailyBookingJobs());
   } catch (error) {
-    console.error("[cron] Booking jobs failed:", error);
+    await reportError("Daily booking job crashed", error, {
+      note: "Reminders, hold releases and payouts didn't run today. They'll catch up on the next run.",
+    });
     return NextResponse.json({ error: "Booking jobs failed" }, { status: 500 });
   }
 }

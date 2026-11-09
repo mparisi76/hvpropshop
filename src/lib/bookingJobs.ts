@@ -10,6 +10,7 @@ import {
 import { getCheckoutSessionId, stripe } from "@/lib/payments";
 import { addDays, businessDate, businessToday } from "@/lib/site";
 import { sendDuePayouts } from "@/lib/payouts";
+import { reportError } from "@/lib/alerts";
 
 /** Days after acceptance before an unpaid hold is released. */
 export const HOLD_DAYS = 2;
@@ -73,7 +74,7 @@ export async function runDailyBookingJobs() {
       await fn();
     } catch (error) {
       summary.errors++;
-      console.error(`[jobs] ${label} failed:`, error);
+      await reportError(`Daily job step failed: ${label}`, error);
     }
   };
 
