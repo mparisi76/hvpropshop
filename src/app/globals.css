@@ -19,7 +19,11 @@ body {
 }
 
 @layer base {
-  button {
+  button,
+  a[href],
+  summary,
+  label[for],
+  select {
     @apply cursor-pointer;
   }
   button:disabled {

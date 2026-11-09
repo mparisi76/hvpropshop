@@ -46,7 +46,7 @@ export default function CategorySidebar({
   const totalAll = sortedParents.reduce((n, p) => n + p.totalCount, 0);
 
   const rowClass = (active: boolean) =>
-    `flex flex-1 items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors ${
+    `flex flex-1 cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors ${
       active
         ? "bg-neutral-100 font-medium text-neutral-900"
         : "text-neutral-700 hover:bg-neutral-50 hover:text-neutral-900"

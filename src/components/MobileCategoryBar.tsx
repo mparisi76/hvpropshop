@@ -13,7 +13,7 @@ interface MobileCategoryBarProps {
 }
 
 const chip = (active: boolean) =>
-  `whitespace-nowrap rounded-md border px-3 py-1.5 text-sm transition-colors ${
+  `cursor-pointer whitespace-nowrap rounded-md border px-3 py-1.5 text-sm transition-colors ${
     active
       ? "border-neutral-900 bg-neutral-900 text-white"
       : "border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400"
