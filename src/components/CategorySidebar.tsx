@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronDown, Store } from "lucide-react";
 import { CategoryTree } from "@/types";
 import { categoryHref } from "@/lib/browse";
+import { usePendingCategory } from "@/components/browse/usePendingCategory";
 
 export default function CategorySidebar({
   tree,
@@ -33,6 +34,8 @@ export default function CategorySidebar({
     }
   );
 
+  const { activeSlug, isPending, select } = usePendingCategory(selectedSlug);
+
   const toggleSection = (slug: string) => {
     setOpenSections((prev) => ({ ...prev, [slug]: !prev[slug] }));
   };
@@ -50,7 +53,7 @@ export default function CategorySidebar({
     }`;
 
   return (
-    <nav aria-label="Categories" className="select-none">
+    <nav aria-label="Categories" aria-busy={isPending} className={`select-none transition-opacity ${isPending ? "opacity-70" : ""}`}>
       <div className="mb-6 border-b border-neutral-200 pb-4">
         <p className="eyebrow mb-2 px-2">Vendors</p>
         <Link
@@ -69,7 +72,7 @@ export default function CategorySidebar({
 
       <p className="eyebrow mb-2 px-2">Categories</p>
 
-      <Link href={categoryHref(keepQuery)} className={rowClass(!selectedSlug)}>
+      <Link href={categoryHref(keepQuery)} onClick={() => select(undefined)} className={rowClass(!activeSlug)}>
         <span>All inventory</span>
         <span className="text-xs tabular-nums text-neutral-400">{totalAll}</span>
       </Link>
@@ -77,7 +80,7 @@ export default function CategorySidebar({
       <ul className="mt-1 space-y-0.5">
         {sortedParents.map((parent) => {
           const isOpen = openSections[parent.slug];
-          const isActive = selectedSlug === parent.slug;
+          const isActive = activeSlug === parent.slug;
           const hasChildren = Object.keys(parent.children).length > 0;
           const sortedChildren = Object.values(parent.children).sort((a, b) =>
             a.name.localeCompare(b.name)
@@ -88,9 +91,10 @@ export default function CategorySidebar({
               <div className="flex items-center gap-0.5">
                 <Link
                   href={categoryHref(keepQuery, parent.slug)}
-                  onClick={() =>
-                    setOpenSections((prev) => ({ ...prev, [parent.slug]: true }))
-                  }
+                  onClick={() => {
+                    select(parent.slug);
+                    setOpenSections((prev) => ({ ...prev, [parent.slug]: true }));
+                  }}
                   className={rowClass(isActive)}
                 >
                   <span className="truncate">{parent.name}</span>
@@ -118,7 +122,8 @@ export default function CategorySidebar({
                     <li key={child.slug}>
                       <Link
                         href={categoryHref(keepQuery, child.slug)}
-                        className={rowClass(selectedSlug === child.slug)}
+                        onClick={() => select(child.slug)}
+                        className={rowClass(activeSlug === child.slug)}
                       >
                         <span className="truncate">{child.name}</span>
                         <span className="text-xs tabular-nums text-neutral-400">

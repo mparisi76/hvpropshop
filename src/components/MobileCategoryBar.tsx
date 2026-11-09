@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { CategoryTree } from "@/types";
 import { categoryHref } from "@/lib/browse";
+import { usePendingCategory } from "@/components/browse/usePendingCategory";
 
 interface MobileCategoryBarProps {
   tree: CategoryTree;
@@ -24,6 +27,7 @@ export default function MobileCategoryBar({
   const sortedParents = Object.values(tree).sort((a, b) =>
     a.name.localeCompare(b.name)
   );
+  const { activeSlug, select } = usePendingCategory(selectedSlug);
 
   return (
     <div className="-mx-4 overflow-x-auto px-4 no-scrollbar md:mx-0 md:px-0">
@@ -35,17 +39,18 @@ export default function MobileCategoryBar({
           Vendors
         </Link>
         <span className="mx-1 h-5 w-px shrink-0 bg-neutral-200" aria-hidden />
-        <Link href={categoryHref(keepQuery)} className={chip(!selectedSlug)}>
+        <Link href={categoryHref(keepQuery)} onClick={() => select(undefined)} className={chip(!activeSlug)}>
           All
         </Link>
         {sortedParents.map((parent) => {
           const isActive =
-            selectedSlug === parent.slug ||
-            Object.values(parent.children).some((c) => c.slug === selectedSlug);
+            activeSlug === parent.slug ||
+            Object.values(parent.children).some((c) => c.slug === activeSlug);
           return (
             <Link
               key={parent.slug}
               href={categoryHref(keepQuery, parent.slug)}
+              onClick={() => select(parent.slug)}
               className={chip(isActive)}
             >
               {parent.name}
