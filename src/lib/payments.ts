@@ -3,6 +3,7 @@ import { createItem, readItems, updateItem } from "@directus/sdk";
 import { asServer } from "@/lib/serverDirectus";
 import { BOOKING_STATUS, getBooking, type Booking } from "@/lib/bookings";
 import { emailCustomerBooked, emailVendorPaid } from "@/lib/bookingEmails";
+import { vendorShare } from "@/lib/policy";
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -81,8 +82,9 @@ async function doRecord(
     })
   )) as unknown as { id: string | number }[];
 
+  let rentalId = existing?.id;
   if (!existing) {
-    await asServer(
+    const created = (await asServer(
       createItem("rentals", {
         kind: "booking",
         prop_id: booking.prop_id?.id,
@@ -96,7 +98,19 @@ async function doRecord(
         status: "confirmed",
         stripe_payment_id: typeof session.payment_intent === "string" ? session.payment_intent : null,
       })
-    );
+    )) as { id: string | number };
+    rentalId = created.id;
+  }
+
+  // The vendor's share, paid out the day after the return date (see lib/payouts).
+  // Separate update so a missing payout field can't block recording the payment.
+  if (rentalId != null) {
+    await asServer(
+      updateItem("rentals", rentalId, {
+        payout_status: "pending",
+        payout_amount: vendorShare((session.amount_total || 0) / 100),
+      })
+    ).catch((error) => console.error(`[payments] Couldn't set payout on rental ${rentalId}:`, error));
   }
 
   await asServer(updateItem("inquiries", booking.id, { status: BOOKING_STATUS.paid }));

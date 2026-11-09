@@ -6,7 +6,6 @@ import Link from "next/link";
 import { loginAction, type ActionState } from "./action";
 import AuthCard from "@/components/AuthCard";
 import PasswordInput from "@/components/ui/PasswordInput";
-import { CONTACT_EMAIL } from "@/lib/site";
 
 /** Carries ?next= (where to go after login) into the form. */
 function NextField() {
@@ -27,12 +26,9 @@ export default function LoginPage() {
       footer={
         <>
           Want to list your inventory?{" "}
-          <a
-            href={`mailto:${CONTACT_EMAIL}?subject=List%20my%20inventory`}
-            className="link"
-          >
-            Get in touch
-          </a>
+          <Link href="/sell" className="link">
+            Apply to list
+          </Link>
         </>
       }
     >

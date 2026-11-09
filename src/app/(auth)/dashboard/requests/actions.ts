@@ -10,6 +10,7 @@ import { getCurrentUser } from "@/lib/currentUser";
 import { BOOKING_STATUS, getAvailableUnits, getBooking } from "@/lib/bookings";
 import { emailCustomerAccepted, emailCustomerDeclined } from "@/lib/bookingEmails";
 import { cancelBooking } from "@/lib/cancellations";
+import { getPayoutAccountStatus } from "@/lib/payouts";
 import { getSiteUrl } from "@/lib/baseUrl";
 
 type Result = { error?: string };
@@ -37,6 +38,12 @@ export async function acceptRequest(id: string): Promise<Result> {
     const found = await ownedPendingBooking(id);
     if ("error" in found) return { error: found.error };
     const b = found.booking;
+
+    // Every accepted booking must be payable to the vendor
+    const payouts = await getPayoutAccountStatus(b.prop_id!.user_created!.id);
+    if (!payouts.ready) {
+      return { error: "Connect your Stripe account (Shop → Payouts) before accepting requests." };
+    }
 
     // Re-check: something may have been booked or blocked since the request came in
     const available = await getAvailableUnits(

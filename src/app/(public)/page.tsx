@@ -143,6 +143,9 @@ export default async function HomePage({
             <Link href="/vendors" className="link">
               Browse vendors
             </Link>
+            <Link href="/how-it-works" className="link">
+              How it works
+            </Link>
           </div>
         </div>
       </section>

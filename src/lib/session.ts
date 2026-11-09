@@ -43,6 +43,17 @@ export function setSessionCookies(cookies: CookieSetter, tokens: SessionTokens) 
   cookies.set(REFRESH_COOKIE, tokens.refresh_token, cookieOptions);
 }
 
+/** Decode a JWT's payload (no verification — only for reading non-secret claims). */
+export function jwtPayload(token: string | undefined): Record<string, unknown> | null {
+  if (!token) return null;
+  try {
+    const payload = token.split(".")[1];
+    return JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+  } catch {
+    return null;
+  }
+}
+
 /** Expiry time (ms since epoch) from a JWT, or 0 if unreadable. */
 export function tokenExpiry(token: string | undefined): number {
   if (!token) return 0;

@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import SearchInput from "@/components/SearchInput";
 import Logo from "@/components/Logo";
 import PullListNavLink from "@/components/PullListNavLink";
-import { CONTACT_EMAIL } from "@/lib/site";
 import AccountMenu from "@/components/AccountMenu";
 import NewListingButton from "@/components/NewListingButton";
 import { getCurrentUser, toMenuUser } from "@/lib/currentUser";
@@ -58,7 +57,7 @@ export default async function PublicLayout({
       <main className="grow">{children}</main>
 
       <footer className="mt-16 border-t border-neutral-200 bg-neutral-50 print:hidden">
-        <div className="container-page grid gap-8 py-10 text-sm sm:grid-cols-3">
+        <div className="container-page grid gap-8 py-10 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <Logo variant="dark" />
             <p className="max-w-xs text-neutral-600">
@@ -75,6 +74,11 @@ export default async function PublicLayout({
                 </Link>
               </li>
               <li>
+                <Link href="/how-it-works" className="hover:text-neutral-900">
+                  How it works
+                </Link>
+              </li>
+              <li>
                 <Link href="/vendors" className="hover:text-neutral-900">
                   Vendor directory
                 </Link>
@@ -84,28 +88,40 @@ export default async function PublicLayout({
                   Your pull list
                 </Link>
               </li>
-              <li>
-                <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-neutral-900">
-                  Contact us
-                </a>
-              </li>
             </ul>
           </div>
           <div className="space-y-2">
             <p className="font-medium text-neutral-900">For vendors</p>
             <ul className="space-y-1.5 text-neutral-600">
               <li>
+                <Link href="/sell" className="hover:text-neutral-900">
+                  List your inventory
+                </Link>
+              </li>
+              <li>
                 <Link href="/login" className="hover:text-neutral-900">
                   Vendor login
                 </Link>
               </li>
+            </ul>
+          </div>
+          <div className="space-y-2">
+            <p className="font-medium text-neutral-900">HV Prop Shop</p>
+            <ul className="space-y-1.5 text-neutral-600">
               <li>
-                <a
-                  href={`mailto:${CONTACT_EMAIL}?subject=List%20my%20inventory`}
-                  className="hover:text-neutral-900"
-                >
-                  List your inventory
-                </a>
+                <Link href="/about" className="hover:text-neutral-900">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-neutral-900">
+                  Contact us
+                </Link>
+              </li>
+              <li>
+                <Link href="/policies" className="hover:text-neutral-900">
+                  Rental policies
+                </Link>
               </li>
             </ul>
           </div>

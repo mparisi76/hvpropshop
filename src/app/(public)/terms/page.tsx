@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import LegalPage from "@/components/LegalPage";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { PLATFORM_FEE_RATE } from "@/lib/policy";
 
 export const metadata: Metadata = {
   title: "Terms of service | HV Prop Shop",
@@ -11,7 +12,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of service"
-      updated="November 8, 2026"
+      updated="November 9, 2026"
       current="/terms"
       intro={
         <p>
@@ -63,6 +64,14 @@ export default function TermsPage() {
           <li>Only list items you have the right to rent out.</li>
           <li>Respond to requests promptly and honor bookings you accept.</li>
           <li>Keep your account secure; you&apos;re responsible for activity under it.</li>
+          <li>
+            <strong>Payments and payouts:</strong> customers pay HV Prop Shop, which collects on your behalf.
+            You receive the amount paid minus our {Math.round(PLATFORM_FEE_RATE * 100)}% commission, sent to your
+            connected Stripe account the day after the rental&apos;s return date. If a customer cancels and keeps
+            part of their payment under our cancellation policy, you receive your share of the part they
+            don&apos;t get back. You need a connected Stripe account to accept bookings, and you&apos;re
+            responsible for your own taxes on what you earn.
+          </li>
           <li>We may edit, hide or remove listings, or suspend accounts, that break these terms.</li>
         </ul>
       </section>

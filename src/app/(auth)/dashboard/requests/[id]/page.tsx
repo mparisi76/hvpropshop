@@ -14,6 +14,8 @@ import {
 } from "@/lib/bookings";
 import { canCancel } from "@/lib/cancellations";
 import RequestDecision from "./RequestDecision";
+import PayoutsBanner from "@/components/dashboard/PayoutsBanner";
+import { getPayoutAccountStatus, vendorShare, PLATFORM_FEE_RATE } from "@/lib/payouts";
 
 export default async function RequestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,6 +35,8 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
   const freeUnits = isPending
     ? await getAvailableUnits(prop.id, totalUnits, b.start_date, b.end_date, b.id).catch(() => null)
     : null;
+
+  const payouts = isPending ? await getPayoutAccountStatus(user.id) : null;
 
   const outcome =
     b.status === BOOKING_STATUS.accepted
@@ -63,6 +67,8 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
         <h1 className="text-2xl font-semibold tracking-tight">
           {isPending ? `${firstName} wants to book this` : "Booking request"}
         </h1>
+
+        {payouts && !payouts.ready && <PayoutsBanner connected={payouts.connected} />}
 
         {outcome && (
           <div className={`mt-4 flex gap-3 rounded-md border px-4 py-3 ${outcome.tone}`}>
@@ -98,7 +104,14 @@ export default async function RequestPage({ params }: { params: Promise<{ id: st
             <Row label="Return" value={formatDate(b.end_date)} />
             <Row label="Length" value={`${days} ${days === 1 ? "day" : "days"}`} />
             <Row label="Quantity" value={`${b.quantity} of ${totalUnits}`} />
-            <Row label="Total" value={b.total != null ? formatMoney(b.total) : "—"} strong />
+            <Row label="Customer pays" value={b.total != null ? formatMoney(b.total) : "—"} />
+            {b.total != null && (
+              <Row
+                label={`You receive (after ${Math.round(PLATFORM_FEE_RATE * 100)}% commission)`}
+                value={formatMoney(vendorShare(Number(b.total)))}
+                strong
+              />
+            )}
           </dl>
           {freeUnits != null && (
             <p

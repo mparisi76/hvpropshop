@@ -3,12 +3,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, LayoutDashboard, LogOut, Settings } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogOut, Settings, ShieldCheck } from "lucide-react";
 import { logout } from "@/app/(auth)/logout-action";
 
 export interface AccountMenuUser {
   name: string;
   role: string;
+  isAdmin?: boolean;
   email: string | null;
   initials: string;
   avatarUrl: string | null;
@@ -109,6 +110,11 @@ export default function AccountMenu({ user }: { user: AccountMenuUser }) {
           <Link href="/dashboard" role="menuitem" className={item} onClick={() => setOpen(false)}>
             <LayoutDashboard className="h-4 w-4" aria-hidden /> Dashboard
           </Link>
+          {user.isAdmin && (
+            <Link href="/admin" role="menuitem" className={item} onClick={() => setOpen(false)}>
+              <ShieldCheck className="h-4 w-4" aria-hidden /> Admin
+            </Link>
+          )}
           <Link href="/dashboard/account" role="menuitem" className={item} onClick={() => setOpen(false)}>
             <Settings className="h-4 w-4" aria-hidden /> Settings
           </Link>

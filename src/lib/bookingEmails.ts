@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { getSiteUrl } from "@/lib/baseUrl";
 import { formatDate, formatMoney, type Booking } from "@/lib/bookings";
-import { CANCELLATION_POLICY } from "@/lib/policy";
+import { CANCELLATION_POLICY, PLATFORM_FEE_RATE, vendorShare } from "@/lib/policy";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = "HV Prop Shop <onboarding@hvpropshop.com>";
@@ -82,6 +82,13 @@ export async function emailVendorPaid(b: Booking) {
       "Booking confirmed and paid",
       `<p>${esc(b.customer_name)} has paid for:</p>${summary(b)}
        <p>Reply to this email to reach them about pickup and return.</p>
+       ${
+         b.total != null
+           ? `<p><strong>Your payout:</strong> ${formatMoney(vendorShare(Number(b.total)))} (after the ${Math.round(
+               PLATFORM_FEE_RATE * 100
+             )}% commission), sent to your Stripe account the day after the return date.</p>`
+           : ""
+       }
        ${button(`${base}/dashboard/requests/${b.id}`, "View booking")}`
     ),
     b.customer_email
@@ -147,7 +154,7 @@ export async function emailCustomerDeclined(b: Booking) {
 
 export async function emailBookingCancelled(
   b: Booking,
-  by: "vendor" | "customer",
+  by: "vendor" | "customer" | "admin",
   refund: number,
   reason: string | null,
   wasPaid: boolean
@@ -159,6 +166,32 @@ export async function emailBookingCancelled(
       ? `<p>A refund of <strong>${formatMoney(refund)}</strong> is on its way to the original card. It usually arrives in 5–10 business days.</p>`
       : `<p>Under the cancellation policy, this cancellation isn't refundable.</p>`;
   const reasonLine = reason ? `<p><strong>Note:</strong> ${esc(reason)}</p>` : "";
+
+  if (by === "admin") {
+    await Promise.all([
+      send(
+        b.customer_email,
+        `Booking cancelled: ${b.item_name}`,
+        layout(
+          "Your booking was cancelled",
+          `<p>Sorry, ${esc(b.customer_name)}: we had to cancel this booking.</p>
+           ${summary(b)}${reasonLine}${refundLine}
+           ${button(`${base}/`, "Find something similar")}`
+        ),
+        CONTACT_EMAIL
+      ),
+      send(
+        vendorEmail(b),
+        `Booking cancelled by HV Prop Shop: ${b.item_name}`,
+        layout(
+          "A booking was cancelled",
+          `<p>HV Prop Shop cancelled this booking and the dates are free again.</p>${summary(b)}${reasonLine}`
+        ),
+        CONTACT_EMAIL
+      ),
+    ]);
+    return;
+  }
 
   if (by === "vendor") {
     await send(
@@ -327,4 +360,27 @@ export async function emailReturnReminder(b: Booking) {
       b.customer_email
     ),
   ]);
+}
+
+/* ---------- Payouts ---------- */
+
+export async function emailVendorPayoutSent(p: {
+  to: string | null;
+  shop: string;
+  item: string;
+  dates: string;
+  amount: string;
+}) {
+  const base = await getSiteUrl();
+  return send(
+    p.to,
+    `You've been paid ${p.amount}: ${p.item}`,
+    layout(
+      "Payout sent",
+      `<p>Hi ${esc(p.shop)}, we've sent <strong>${esc(p.amount)}</strong> to your Stripe account for:</p>
+       <p>${esc(p.item)}<br><span style="color:#737373">${esc(p.dates)}</span></p>
+       <p>Stripe pays it out to your bank on your usual payout schedule.</p>
+       ${button(`${base}/dashboard/profile#payouts`, "View payouts")}`
+    )
+  );
 }

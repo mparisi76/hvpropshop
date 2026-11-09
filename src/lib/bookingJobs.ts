@@ -9,6 +9,7 @@ import {
 } from "@/lib/bookingEmails";
 import { getCheckoutSessionId, stripe } from "@/lib/payments";
 import { addDays, businessDate, businessToday } from "@/lib/site";
+import { sendDuePayouts } from "@/lib/payouts";
 
 /** Days after acceptance before an unpaid hold is released. */
 export const HOLD_DAYS = 2;
@@ -47,6 +48,7 @@ async function releaseHold(b: Accepted) {
  * - day after acceptance: remind the customer to pay
  * - HOLD_DAYS after acceptance (or once the dates pass): release the unpaid hold
  * - day before pickup / return: remind customer and vendor
+ * - day after return: pay the vendor their share
  *
  * Each step selects by date, so a booking gets each email once when the job
  * runs daily.
@@ -56,7 +58,15 @@ export async function runDailyBookingJobs() {
   const tomorrow = addDays(today, 1);
   const yesterday = addDays(today, -1);
   const releaseOnOrBefore = addDays(today, -HOLD_DAYS);
-  const summary = { reminded: 0, released: 0, pickupReminders: 0, returnReminders: 0, errors: 0 };
+  const summary = {
+    reminded: 0,
+    released: 0,
+    pickupReminders: 0,
+    returnReminders: 0,
+    payoutsSent: 0,
+    payoutsWaiting: 0,
+    errors: 0,
+  };
 
   const step = async (label: string, fn: () => Promise<unknown>) => {
     try {
@@ -101,6 +111,14 @@ export async function runDailyBookingJobs() {
       summary.returnReminders++;
     });
   }
+
+  // 4. Pay vendors for rentals whose return date has passed
+  await step("payouts", async () => {
+    const payouts = await sendDuePayouts();
+    summary.payoutsSent += payouts.paid;
+    summary.payoutsWaiting += payouts.skipped;
+    summary.errors += payouts.errors;
+  });
 
   console.info("[jobs] Daily booking jobs:", summary);
   return summary;

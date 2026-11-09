@@ -58,11 +58,23 @@ export function userRoleName(u: CurrentUser) {
   return (typeof u.role === "object" && u.role?.name) || "Vendor";
 }
 
+/**
+ * Admins are users whose Directus role is listed in ADMIN_ROLE_NAMES
+ * (comma-separated; defaults to Directus's built-in "Administrator").
+ */
+export function isAdmin(u: CurrentUser | null) {
+  if (!u) return false;
+  const role = typeof u.role === "object" ? u.role?.name : null;
+  const admins = (process.env.ADMIN_ROLE_NAMES || "Administrator").split(",").map((r) => r.trim().toLowerCase());
+  return Boolean(role && admins.includes(role.toLowerCase()));
+}
+
 /** Props for the <AccountMenu> client component. */
 export function toMenuUser(u: CurrentUser) {
   return {
     name: userDisplayName(u),
     role: userRoleName(u),
+    isAdmin: isAdmin(u),
     email: u.email,
     initials: userInitials(u),
     avatarUrl: u.avatar

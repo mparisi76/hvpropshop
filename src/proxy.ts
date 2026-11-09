@@ -65,7 +65,8 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isLogin = pathname === "/login";
   // Only page loads get bounced to login (not form saves, which can't follow a redirect)
-  const isDashboardPage = pathname.startsWith("/dashboard") && request.method === "GET";
+  const isDashboardPage =
+    (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) && request.method === "GET";
 
   const accessValid = Boolean(access) && tokenExpiry(access) - Date.now() > REFRESH_EARLY_MS;
 

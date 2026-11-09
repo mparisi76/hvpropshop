@@ -11,6 +11,8 @@ import {
 } from "@/lib/bookings";
 import { canCancel } from "@/lib/cancellations";
 import RequestRow, { type RequestRowData } from "./RequestRow";
+import PayoutsBanner from "@/components/dashboard/PayoutsBanner";
+import { getPayoutAccountStatus } from "@/lib/payouts";
 
 const TABS = [
   { key: "pending", label: "Needs response" },
@@ -58,6 +60,8 @@ export default async function RequestsPage({
   }
   groups.booked.sort((a, b) => a.start_date.localeCompare(b.start_date));
 
+  const payouts = groups.pending.length ? await getPayoutAccountStatus(user.id) : null;
+
   const requested = (await searchParams).tab as TabKey | undefined;
   const tab: TabKey =
     requested && requested in groups ? requested : groups.pending.length ? "pending" : "booked";
@@ -72,6 +76,8 @@ export default async function RequestsPage({
         <p className="mt-1 text-sm text-neutral-600">
           Customers only pay after you accept, so check availability before accepting.
         </p>
+
+        {payouts && !payouts.ready && <PayoutsBanner connected={payouts.connected} />}
 
         <nav aria-label="Request status" className="mt-6 flex gap-1 overflow-x-auto border-b border-neutral-200 no-scrollbar">
           {TABS.map((t) => {

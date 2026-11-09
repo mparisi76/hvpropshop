@@ -3,8 +3,10 @@ import { asServer } from "@/lib/serverDirectus";
 import { BOOKING_STATUS, customerRefundPercent, todayIso, type Booking } from "@/lib/bookings";
 import { emailBookingCancelled } from "@/lib/bookingEmails";
 import { stripe } from "@/lib/payments";
+import { vendorShare } from "@/lib/policy";
 
-export type CancelledBy = "vendor" | "customer";
+/** Vendors and admins always refund in full; customers follow the policy. */
+export type CancelledBy = "vendor" | "customer" | "admin";
 
 const OPEN_STATUSES: string[] = [BOOKING_STATUS.pending, BOOKING_STATUS.accepted, BOOKING_STATUS.paid];
 
@@ -19,7 +21,7 @@ export function canCancel(b: Booking, by: CancelledBy) {
 /** What a cancellation would refund right now. Unpaid requests refund nothing. */
 export function refundFor(b: Booking, by: CancelledBy, amountPaid = Number(b.total) || 0) {
   if (b.status !== BOOKING_STATUS.paid) return { percent: 0, amount: 0 };
-  const percent = by === "vendor" ? 100 : customerRefundPercent(b.start_date);
+  const percent = by === "customer" ? customerRefundPercent(b.start_date) : 100;
   return { percent, amount: Math.round(amountPaid * percent) / 100 };
 }
 
@@ -90,11 +92,17 @@ export async function cancelBooking(
     }
   }
 
-  // 3. Free the dates
+  // 3. Free the dates, and adjust the vendor's payout: none after a full refund,
+  //    otherwise their share of what the customer didn't get back
   if (rental) {
-    await asServer(updateItem("rentals", rental.id, { status: "cancelled" })).catch((error) =>
-      console.error(`[cancel] Couldn't release rental ${rental.id}:`, error)
-    );
+    const kept = Math.max(0, Math.round((amountPaid - amount) * 100) / 100);
+    await asServer(
+      updateItem("rentals", rental.id, {
+        status: "cancelled",
+        payout_status: kept > 0 ? "pending" : "none",
+        payout_amount: kept > 0 ? vendorShare(kept) : 0,
+      })
+    ).catch((error) => console.error(`[cancel] Couldn't release rental ${rental.id}:`, error));
   }
 
   await emailBookingCancelled({ ...b, status: BOOKING_STATUS.cancelled }, by, amount, note, b.status === BOOKING_STATUS.paid);
