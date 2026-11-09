@@ -7,6 +7,8 @@ import directus from "@/lib/directus";
 import { Prop } from "@/types";
 import { CONTACT_EMAIL } from "@/lib/site";
 import PropFeed from "@/components/PropFeed";
+import JsonLd from "@/components/JsonLd";
+import { absoluteUrl, pageMeta, previewImage } from "@/lib/seo";
 import VendorAvatar from "@/components/VendorAvatar";
 import FeaturedBadge from "@/components/FeaturedBadge";
 import {
@@ -28,10 +30,15 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
   const name = vendorName(vendor);
   const location = vendorLocation(vendor);
-  return {
-    title: `${name} | HV Prop Shop`,
-    description: `Rent props and set dressing from ${name}${location ? ` in ${location}` : ""}.`,
-  };
+  return pageMeta({
+    title: `${name}${location ? ` — prop rentals in ${location}` : ""} | HV Prop Shop`,
+    description: `Rent props and set dressing from ${name}${location ? ` in ${location}` : ""}. ${vendor.itemCount} ${
+      vendor.itemCount === 1 ? "item" : "items"
+    } available for film, TV and photo production.`,
+    path: `/vendors/${id}`,
+    image: vendor.shop_logo ? previewImage(vendor.shop_logo, "inside") : null,
+    imageAlt: name,
+  });
 }
 
 export default async function VendorPage({ params }: Params) {
@@ -68,8 +75,29 @@ export default async function VendorPage({ params }: Params) {
     `Inquiry about ${name}`
   )}`;
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Store",
+    name,
+    url: absoluteUrl(`/vendors/${id}`),
+    description: specialties ? `Prop and set dressing rentals: ${specialties}` : "Prop and set dressing rentals",
+    ...(vendor.shop_logo ? { logo: previewImage(vendor.shop_logo, "inside"), image: previewImage(vendor.shop_logo, "inside") } : {}),
+    ...(vendor.city || vendor.state
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: vendor.city ?? undefined,
+            addressRegion: vendor.state ?? undefined,
+            addressCountry: "US",
+          },
+        }
+      : {}),
+    ...(website ? { sameAs: [website.href] } : {}),
+  };
+
   return (
     <>
+      <JsonLd data={structuredData} />
       <section className="border-b border-neutral-200 bg-neutral-50">
         <div className="container-page py-8">
           <nav aria-label="Breadcrumb" className="mb-6 flex items-center gap-1 text-sm text-neutral-500">

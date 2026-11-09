@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { CalendarCheck, ClipboardList, CreditCard, MessageSquare, Search, Truck } from "lucide-react";
 import { CANCELLATION_POLICY } from "@/lib/policy";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "How it works | HV Prop Shop",
   description:
     "Find props and set dressing from independent vendors across the Hudson Valley and NYC, request dates, and book once the vendor confirms.",
-};
+  path: "/how-it-works",
+});
 
 const STEPS = [
   {

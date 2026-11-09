@@ -32,10 +32,22 @@ export function parseLocation(loc: string) {
 
 /* ---------- Links ---------- */
 
-/** Browse URL for a category, carrying over other params (e.g. "loc=…&sort=…"). */
+/** Browse URL for a category (/rentals/slug), carrying over other params (e.g. "loc=…&sort=…"). */
 export function categoryHref(keepQuery: string, slug?: string) {
-  const p = new URLSearchParams(keepQuery);
-  if (slug) p.set("category", slug);
-  const qs = p.toString();
-  return qs ? `/?${qs}` : "/";
+  const qs = new URLSearchParams(keepQuery).toString();
+  const path = slug ? `/rentals/${encodeURIComponent(slug)}` : "/";
+  return qs ? `${path}?${qs}` : path;
 }
+
+/* ---------- Clean URLs ---------- */
+
+/** "Kingston, NY" → "kingston-ny" */
+export function locationSlug(label: string) {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export const categoryPath = (slug: string) => `/rentals/${encodeURIComponent(slug)}`;
+export const locationPath = (label: string) => `/prop-rentals/${locationSlug(label)}`;

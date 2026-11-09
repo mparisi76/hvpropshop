@@ -84,6 +84,11 @@ export default async function PublicLayout({
                 </Link>
               </li>
               <li>
+                <Link href="/prop-rentals" className="hover:text-neutral-900">
+                  Browse by town
+                </Link>
+              </li>
+              <li>
                 <Link href="/list" className="hover:text-neutral-900">
                   Your pull list
                 </Link>

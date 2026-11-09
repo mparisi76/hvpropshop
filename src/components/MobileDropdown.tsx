@@ -23,7 +23,7 @@ export default function MobileFilters({
     if (slug === "all") {
       router.push("/");
     } else {
-      router.push(`/?category=${slug}`);
+      router.push(`/rentals/${encodeURIComponent(slug)}`);
     }
   };
 

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { getBooking } from "@/lib/bookings";
 import { recordPayment, stripe } from "@/lib/payments";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Booking confirmed | HV Prop Shop", robots: { index: false, follow: false } };
 
 export default async function SuccessPage({
   searchParams,

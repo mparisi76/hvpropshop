@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import { MapPin } from "lucide-react";
 import VendorAvatar from "@/components/VendorAvatar";
 import FeaturedBadge from "@/components/FeaturedBadge";
@@ -11,11 +12,12 @@ import {
   vendorName,
 } from "@/lib/vendors";
 
-export const metadata: Metadata = {
-  title: "Vendors | HV Prop Shop",
+export const metadata: Metadata = pageMeta({
+  title: "Prop rental vendors — Hudson Valley to NYC | HV Prop Shop",
   description:
-    "Prop houses and independent vendors across the Hudson Valley and New York City.",
-};
+    "Prop houses and independent vendors renting props and set dressing to productions from the Hudson Valley to New York City.",
+  path: "/vendors",
+});
 
 export default async function VendorsPage() {
   const [vendors, inventoryField] = await Promise.all([

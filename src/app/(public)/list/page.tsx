@@ -1,10 +1,13 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import PullListView from "@/components/pullList/PullListView";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Pull list | HV Prop Shop",
-};
+  path: "/list",
+  noindex: true,
+});
 
 export default function PullListPage() {
   return (

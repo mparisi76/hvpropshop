@@ -8,6 +8,10 @@ import { asServer } from "@/lib/serverDirectus";
 import { GalleryItem, Prop } from "@/types";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import JsonLd from "@/components/JsonLd";
+import type { Metadata } from "next";
+import { absoluteUrl, pageMeta, plainText, previewImage } from "@/lib/seo";
+import { categoryPath, locationPath } from "@/lib/browse";
 import InquiryWrapper from "@/components/inquiry/InquiryWrapper";
 import PullListButton from "@/components/PullListButton";
 import { CARD_FIELDS } from "@/lib/props";
@@ -21,20 +25,49 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
-}) {
+}): Promise<Metadata> {
   const { id } = await params;
-  const item = await directus.request(
-    readItem("props", id, { fields: ["name", "description", "thumbnail"] })
-  );
+  const item = (await directus
+    .request(
+      readItem("props", id, {
+        fields: [
+          "name",
+          "description",
+          "thumbnail",
+          "price",
+          { category: ["name"] },
+          { user_created: ["shop_name", "first_name", "city", "state"] },
+        ],
+      })
+    )
+    .catch(() => null)) as {
+    name: string;
+    description: string | null;
+    thumbnail: string | null;
+    price: number | null;
+    category: { name: string } | null;
+    user_created: { shop_name: string | null; first_name: string | null; city: string | null; state: string | null } | null;
+  } | null;
 
-  const plainDescription = item.description
-    ? item.description.replace(/<[^>]*>?/gm, "").slice(0, 150)
-    : `Rent ${item.name} for film, TV and photo production. Available from vendors across the Hudson Valley and NYC.`;
+  if (!item) return { title: "Item not found | HV Prop Shop", robots: { index: false } };
 
-  return {
-    title: `${item.name} | HV Prop Shop`,
-    description: plainDescription,
-  };
+  const place = [item.user_created?.city, item.user_created?.state].filter(Boolean).join(", ");
+  const vendor = item.user_created?.shop_name || item.user_created?.first_name;
+  const fallback = [
+    `Rent ${item.name}${item.category?.name ? ` (${item.category.name.toLowerCase()})` : ""} for film, TV and photo production`,
+    item.price ? `$${item.price}/day` : null,
+    vendor ? `from ${vendor}${place ? ` in ${place}` : ""}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return pageMeta({
+    title: `${item.name} — prop rental${place ? ` in ${place}` : ""} | HV Prop Shop`,
+    description: plainText(item.description) || fallback,
+    path: `/props/${id}`,
+    image: item.thumbnail ? previewImage(item.thumbnail) : null,
+    imageAlt: item.name,
+  });
 }
 
 export default async function PropDetail({
@@ -165,13 +198,75 @@ export default async function PropDetail({
       value: isOutOfStock ? "None" : `${liveQuantity} ${liveQuantity === 1 ? "unit" : "units"}`,
     },
     ...(item.dimensions ? [{ label: "Dimensions", value: item.dimensions }] : []),
-    { label: "Pickup location", value: vendorLocation },
+    {
+      label: "Pickup location",
+      value:
+        item.user_created?.city && item.user_created?.state ? (
+          <Link href={locationPath(vendorLocation)} className="underline-offset-2 hover:underline">
+            {vendorLocation}
+          </Link>
+        ) : (
+          vendorLocation
+        ),
+    },
   ];
 
   const price = item.price != null ? `$${item.price.toLocaleString()}` : null;
 
+  // Structured data: the item as a rentable product (daily rate) + its breadcrumb trail
+  const itemUrl = absoluteUrl(`/props/${item.id}`);
+  const crumbs = [
+    { name: "All inventory", url: absoluteUrl("/") },
+    ...(item.category?.parent
+      ? [{ name: item.category.parent.name, url: absoluteUrl(categoryPath(item.category.parent.slug)) }]
+      : []),
+    ...(item.category ? [{ name: item.category.name, url: absoluteUrl(categoryPath(item.category.slug)) }] : []),
+    { name: item.name, url: itemUrl },
+  ];
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: item.name,
+      url: itemUrl,
+      description: plainText(item.description, 500) || undefined,
+      image: allImageIds.slice(0, 5).map((fileId) => previewImage(String(fileId))),
+      category: item.category?.name,
+      ...(item.condition ? { itemCondition: "https://schema.org/UsedCondition" } : {}),
+      ...(item.price != null
+        ? {
+            offers: {
+              "@type": "Offer",
+              url: itemUrl,
+              priceCurrency: "USD",
+              price: item.price,
+              priceSpecification: {
+                "@type": "UnitPriceSpecification",
+                price: item.price,
+                priceCurrency: "USD",
+                unitCode: "DAY",
+                unitText: "per day",
+              },
+              availability: isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+              seller: {
+                "@type": "Organization",
+                name: vendorName,
+                ...(vendorId ? { url: absoluteUrl(`/vendors/${vendorId}`) } : {}),
+              },
+            },
+          }
+        : {}),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: crumbs.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, item: c.url })),
+    },
+  ];
+
   return (
     <div className="container-page pb-28 pt-6 lg:pb-16">
+      <JsonLd data={structuredData} />
       {item.category && (
         <div className="mb-6">
           <Breadcrumbs
@@ -259,7 +354,7 @@ export default async function PropDetail({
                   <p className="rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
                     This item isn&apos;t available right now.
                   </p>
-                  <Link href={`/?category=${item.category?.slug ?? ""}`} className="btn-secondary w-full">
+                  <Link href={item.category ? categoryPath(item.category.slug) : "/"} className="btn-secondary w-full">
                     Browse similar items
                   </Link>
                 </div>
@@ -343,7 +438,7 @@ export default async function PropDetail({
             <h2 className="text-lg font-semibold tracking-tight">
               More in {item.category?.name ?? "this category"}
             </h2>
-            <Link href={`/?category=${item.category?.slug}`} className="link text-sm">
+            <Link href={item.category ? categoryPath(item.category.slug) : "/"} className="link text-sm">
               View all
             </Link>
           </div>

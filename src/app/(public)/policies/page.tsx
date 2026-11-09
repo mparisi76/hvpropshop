@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import LegalPage from "@/components/LegalPage";
 import { CANCELLATION_POLICY } from "@/lib/policy";
 import { CONTACT_EMAIL } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Rental policies | HV Prop Shop",
-  description: "How booking, payment, cancellations and refunds work on HV Prop Shop.",
-};
+  description:
+    "How booking, payment, cancellations and refunds work on HV Prop Shop.",
+  path: "/policies",
+});
 
 export default function PoliciesPage() {
   return (

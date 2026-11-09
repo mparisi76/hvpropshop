@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { categoryPath } from "@/lib/browse";
 
 interface BreadcrumbProps {
   parent?: { name: string; slug: string };
@@ -25,14 +26,14 @@ export default function Breadcrumbs({ parent, current, linkCurrent }: Breadcrumb
       {parent && (
         <>
           <Sep />
-          <Link href={`/?category=${parent.slug}`} className="hover:text-neutral-900">
+          <Link href={categoryPath(parent.slug)} className="hover:text-neutral-900">
             {parent.name}
           </Link>
         </>
       )}
       <Sep />
       {linkCurrent ? (
-        <Link href={`/?category=${current.slug}`} className="hover:text-neutral-900">
+        <Link href={categoryPath(current.slug)} className="hover:text-neutral-900">
           {current.name}
         </Link>
       ) : (

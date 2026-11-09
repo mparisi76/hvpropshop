@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import LegalPage from "@/components/LegalPage";
 import { CONTACT_EMAIL } from "@/lib/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Privacy policy | HV Prop Shop",
-};
+  description:
+    "What HV Prop Shop collects, why, and who we share it with.",
+  path: "/privacy",
+});
 
 export default function PrivacyPage() {
   return (

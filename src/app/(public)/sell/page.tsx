@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { BadgeDollarSign, Bell, CalendarCheck, Camera } from "lucide-react";
 import { PLATFORM_FEE_RATE } from "@/lib/policy";
 import ApplyForm from "./ApplyForm";
 
-export const metadata: Metadata = {
-  title: "List your inventory | HV Prop Shop",
+export const metadata: Metadata = pageMeta({
+  title: "List your props for rent | HV Prop Shop",
   description:
     "Rent your props and set dressing to productions across the Hudson Valley and NYC. You approve every booking and get paid automatically.",
-};
+  path: "/sell",
+});
 
 const fee = Math.round(PLATFORM_FEE_RATE * 100);
 

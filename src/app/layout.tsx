@@ -1,6 +1,7 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_TAGLINE, baseUrl } from "@/lib/seo";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -8,9 +9,18 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "HV Prop Shop | Prop & set dressing rentals, Hudson Valley to NYC",
-  description:
-    "Rent props and set dressing from independent vendors across the Hudson Valley and New York City.",
+  metadataBase: new URL(baseUrl()),
+  title: `${SITE_NAME} | ${SITE_TAGLINE}`,
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_US",
+    title: `${SITE_NAME} | ${SITE_TAGLINE}`,
+    description: DEFAULT_DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });

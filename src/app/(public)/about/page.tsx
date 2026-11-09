@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "About | HV Prop Shop",
   description:
     "HV Prop Shop connects productions with independent prop and set dressing vendors from the Hudson Valley to New York City.",
-};
+  path: "/about",
+});
 
 // Copy is a starting point — personalize it with your own story.
 export default function AboutPage() {

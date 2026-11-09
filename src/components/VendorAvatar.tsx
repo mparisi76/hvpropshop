@@ -12,11 +12,11 @@ export default function VendorAvatar({
   name: string;
   /** Directus file id of the shop logo */
   logo?: string | null;
-  size?: "md" | "lg";
+  size?: "sm" | "md" | "lg";
 }) {
   const [failed, setFailed] = useState(false);
-  const dims = size === "lg" ? "h-16 w-16 text-lg" : "h-10 w-10 text-sm";
-  const px = size === "lg" ? 128 : 80;
+  const dims = size === "lg" ? "h-16 w-16 text-lg" : size === "sm" ? "h-7 w-7 text-[10px]" : "h-10 w-10 text-sm";
+  const px = size === "lg" ? 128 : size === "sm" ? 56 : 80;
 
   if (logo && !failed) {
     return (

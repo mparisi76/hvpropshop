@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import LegalPage from "@/components/LegalPage";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { PLATFORM_FEE_RATE } from "@/lib/policy";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Terms of service | HV Prop Shop",
-};
+  description:
+    "The terms that apply when you rent or list items on HV Prop Shop.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return (

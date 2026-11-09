@@ -30,7 +30,7 @@ export default function CategoryBar({ categories }: CategoryBarProps) {
           <Link
             key={cat}
             // encodeURIComponent turns & into %26 so the URL doesn't break
-            href={`/?category=${encodeURIComponent(cat)}`}
+            href={`/rentals/${encodeURIComponent(cat)}`}
             className={`text-[12px] font-black uppercase tracking-[0.15em] whitespace-nowrap pb-1 border-b-2 transition-all duration-200 ${
               activeCategory === cat
                 ? "border-blue-600 text-black"

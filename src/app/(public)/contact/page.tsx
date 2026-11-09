@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { CONTACT_EMAIL } from "@/lib/site";
 import ContactForm from "./ContactForm";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: "Contact | HV Prop Shop",
-};
+  description:
+    "Get in touch with HV Prop Shop about bookings, listing your inventory, partnerships or press.",
+  path: "/contact",
+});
 
 export default async function ContactPage({ searchParams }: { searchParams: Promise<{ topic?: string }> }) {
   const { topic } = await searchParams;
