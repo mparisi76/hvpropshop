@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { readItems } from "@directus/sdk";
 import directus from "@/lib/directus";
-import { getVendors } from "@/lib/vendors";
+import { getVendorsCached } from "@/lib/vendors";
 import { absoluteUrl } from "@/lib/seo";
 import { withOptionalField } from "@/lib/fields";
 import { categoryPath, categorySlug, locationPath } from "@/lib/browse";
@@ -49,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     directus
       .request(readItems("categories", { fields: ["slug", "name"], limit: -1 }))
       .catch(() => []) as Promise<{ slug: string | null; name: string }[]>,
-    getVendors().catch(() => []),
+    getVendorsCached().catch(() => []),
   ]);
   const { locations } = await getCatalog().catch(() => ({ locations: [] as { label: string }[] }));
 

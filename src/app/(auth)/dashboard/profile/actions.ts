@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshCatalog } from "@/lib/catalog";
 import { deleteFile, readMe, uploadFiles, withToken } from "@directus/sdk";
 import directus from "@/lib/directus";
 import { updateMeFields } from "@/lib/directusUser";
@@ -65,6 +66,7 @@ export async function updateProfile(
 
     revalidatePath("/dashboard", "layout");
     revalidatePath("/vendors");
+    refreshCatalog();
     if (me?.id) revalidatePath(`/vendors/${me.id}`);
   } catch (error) {
     console.error("Profile update error:", error);
@@ -80,6 +82,7 @@ export async function updateProfile(
 export type LogoState = { success?: string; error?: string; logo?: string | null } | null;
 
 function revalidateShop(id?: string | null) {
+  refreshCatalog();
   revalidatePath("/dashboard", "layout");
   revalidatePath("/vendors", "layout");
   revalidatePath("/props", "layout");

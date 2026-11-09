@@ -7,7 +7,7 @@ import FeaturedBadge from "@/components/FeaturedBadge";
 import {
   formatInventoryType,
   getInventoryTypeField,
-  getVendors,
+  getVendorsCached,
   vendorLocation,
   vendorName,
 } from "@/lib/vendors";
@@ -21,7 +21,7 @@ export const metadata: Metadata = pageMeta({
 
 export default async function VendorsPage() {
   const [vendors, inventoryField] = await Promise.all([
-    getVendors(),
+    getVendorsCached(),
     getInventoryTypeField(),
   ]);
 

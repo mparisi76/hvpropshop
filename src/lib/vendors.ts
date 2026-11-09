@@ -1,4 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { readItems, readUser, readUsers } from "@directus/sdk";
+import { CATALOG_TAG, CATALOG_TTL } from "@/lib/catalog";
 import { getDropdownField, withOptionalField, type DropdownField, type FieldChoice } from "@/lib/fields";
 import directus from "@/lib/directus";
 import { Vendor } from "@/types";
@@ -137,3 +139,9 @@ export async function getVendor(id: string) {
     return null;
   }
 }
+
+/** getVendors, cached across requests and cleared with the catalog. */
+export const getVendorsCached = unstable_cache(() => getVendors(), ["vendors-v1"], {
+  revalidate: CATALOG_TTL,
+  tags: [CATALOG_TAG],
+});

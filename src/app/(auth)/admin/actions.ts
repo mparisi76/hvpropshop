@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshCatalog } from "@/lib/catalog";
 import { inviteUser, readItem, readUsers, updateItem, updateUser } from "@directus/sdk";
 import { Resend } from "resend";
 import { getActionToken } from "@/lib/actionSession";
@@ -59,6 +60,7 @@ export async function setFeatured(userId: string, featured: boolean): Promise<Re
     );
     revalidatePath("/admin/vendors");
     revalidatePath("/vendors", "layout");
+    refreshCatalog();
     return {};
   } catch (error) {
     console.error("[admin] Feature toggle failed:", error);
@@ -222,6 +224,7 @@ export async function deleteVendor(vendorId: string, confirmName: string): Promi
   try {
     const { warnings } = await deleteVendorEverything(footprint, token);
     console.info(`[admin] Deleted vendor ${vendorId} (${footprint.user.name}) by ${me?.email}`);
+    refreshCatalog();
     revalidatePath("/admin", "layout");
     revalidatePath("/", "layout");
     return { message: `${footprint.user.name} was deleted.`, warnings };

@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache, updateTag } from "next/cache";
 import { readItems } from "@directus/sdk";
 import directus from "@/lib/directus";
 import { Category, CategoryTree, Prop } from "@/types";
@@ -12,11 +13,27 @@ export interface CatalogLocation {
   vendorIds: string[];
 }
 
+/** Cache tag for the catalog and vendor list; cleared whenever listings or vendors change. */
+export const CATALOG_TAG = "catalog";
+
+/**
+ * Clear the cached catalog after a change (call from server actions only).
+ * Changes made directly in Directus show up within CATALOG_TTL instead.
+ */
+export function refreshCatalog() {
+  updateTag(CATALOG_TAG);
+}
+
+/** Seconds before cached catalog data is rebuilt even without a change. */
+export const CATALOG_TTL = 300;
+
 /**
  * Categories, per-category counts and pickup towns for all published items.
- * Cached per request so pages and their metadata share one fetch.
+ * Built from every published item, so it's cached across requests (shared by
+ * pages, their metadata and "Load more") rather than rebuilt on every visit.
  */
-export const getCatalog = cache(async () => {
+const loadCatalog = unstable_cache(
+  async () => {
   const [categories, allItems] = await Promise.all([
     directus.request<Category[]>(
       readItems("categories", { fields: ["id", "name", "slug", { parent: ["id", "slug"] }], limit: -1 })
@@ -46,7 +63,12 @@ export const getCatalog = cache(async () => {
   const locations = [...byLocation.values()].sort((a, b) => a.label.localeCompare(b.label));
 
   return { tree, itemCount: allItems.length, vendorCount, locations };
-});
+  },
+  ["catalog-v1"],
+  { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] }
+);
+
+export const getCatalog = cache(() => loadCatalog());
 
 /** A category (parent or child) by slug, with its parent for breadcrumbs. */
 export function findCategory(tree: CategoryTree, slug: string | undefined) {

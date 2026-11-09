@@ -5,7 +5,7 @@ import BrowseView from "@/components/browse/BrowseView";
 import JsonLd from "@/components/JsonLd";
 import VendorAvatar from "@/components/VendorAvatar";
 import { getCatalog } from "@/lib/catalog";
-import { getVendors, vendorLocation, vendorName } from "@/lib/vendors";
+import { getVendorsCached, vendorLocation, vendorName } from "@/lib/vendors";
 import { locationPath, locationSlug } from "@/lib/browse";
 import { absoluteUrl, pageMeta } from "@/lib/seo";
 
@@ -43,7 +43,7 @@ export default async function LocationPage({ params, searchParams }: { params: P
   const loc = await findPlace(place);
   if (!loc) notFound();
 
-  const vendors = (await getVendors().catch(() => [])).filter((v) => locationSlug(vendorLocation(v)) === loc.slug);
+  const vendors = (await getVendorsCached().catch(() => [])).filter((v) => locationSlug(vendorLocation(v)) === loc.slug);
 
   return (
     <BrowseView

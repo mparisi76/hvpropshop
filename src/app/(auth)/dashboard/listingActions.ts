@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { refreshCatalog } from "@/lib/catalog";
 import { revalidatePath } from "next/cache";
 import { createItem, deleteFiles, updateItem, uploadFiles, withToken } from "@directus/sdk";
 import directus from "@/lib/directus";
@@ -15,6 +16,7 @@ const MAX_PHOTOS = 12;
 const clean = (v: FormDataEntryValue | null, max = 200) => String(v ?? "").trim().slice(0, max);
 
 function revalidateListing(id?: string | number) {
+  refreshCatalog();
   revalidatePath("/dashboard", "layout");
   revalidatePath("/");
   revalidatePath("/vendors", "layout");
