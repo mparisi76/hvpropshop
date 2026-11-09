@@ -32,15 +32,15 @@ export default async function BrowseView({
   /** On a /prop-rentals page the location is part of the URL, not a filter */
   locationPage?: boolean;
 }) {
-  const query = { category, search: search?.toLowerCase(), loc };
+  const catalog = await getCatalog();
+  const found = findCategory(catalog.tree, category);
+  const query = { category, categoryIds: found?.ids ?? null, search: search?.toLowerCase(), loc };
 
-  const [catalog, initialItems, countRows] = await Promise.all([
-    getCatalog(),
+  const [initialItems, countRows] = await Promise.all([
     getPropsPage({ ...query, sort }),
     directus.request(readItems("props", { filter: buildPropFilter(query), aggregate: { count: "*" } })),
   ]);
   const totalCount = parseInt(String((countRows as { count: string | number }[])[0]?.count ?? 0)) || 0;
-  const found = findCategory(catalog.tree, category);
 
   // Category links keep the location (unless it's in the path) and sort
   const keep = new URLSearchParams();

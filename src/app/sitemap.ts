@@ -4,7 +4,7 @@ import directus from "@/lib/directus";
 import { getVendors } from "@/lib/vendors";
 import { absoluteUrl } from "@/lib/seo";
 import { withOptionalField } from "@/lib/fields";
-import { categoryPath, locationPath } from "@/lib/browse";
+import { categoryPath, categorySlug, locationPath } from "@/lib/browse";
 import { getCatalog } from "@/lib/catalog";
 
 // Rebuild at most once an hour
@@ -47,8 +47,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return [];
     }) as Promise<{ id: string | number; date_updated?: string | null; date_created?: string | null }[]>,
     directus
-      .request(readItems("categories", { fields: ["slug"], limit: -1 }))
-      .catch(() => []) as Promise<{ slug: string | null }[]>,
+      .request(readItems("categories", { fields: ["slug", "name"], limit: -1 }))
+      .catch(() => []) as Promise<{ slug: string | null; name: string }[]>,
     getVendors().catch(() => []),
   ]);
   const { locations } = await getCatalog().catch(() => ({ locations: [] as { label: string }[] }));
@@ -56,9 +56,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticPages,
     ...categories
-      .filter((c) => c.slug)
+      .filter((c) => c.slug || c.name)
       .map((c) => ({
-        url: absoluteUrl(categoryPath(c.slug!)),
+        url: absoluteUrl(categoryPath(categorySlug(c))),
         changeFrequency: "daily" as const,
         priority: 0.8,
       })),

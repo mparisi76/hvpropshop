@@ -1,6 +1,7 @@
 // import { Prop } from '@/types';
 
 import { Category, CategoryTree, Prop } from "@/types";
+import { categorySlug } from "@/lib/browse";
 import { businessToday } from "@/lib/site";
 
 // lib/utils.ts
@@ -72,7 +73,7 @@ export function getCategoryTree(
       tree[String(p.id)] = {
         // Force ID to string for the key
         name: p.name,
-        slug: p.slug,
+        slug: categorySlug(p),
         totalCount: 0,
         children: {},
       };
@@ -86,7 +87,7 @@ export function getCategoryTree(
       if (tree[parentId]) {
         tree[parentId].children[String(c.id)] = {
           name: c.name,
-          slug: c.slug,
+          slug: categorySlug(c),
           count: 0,
         };
       }

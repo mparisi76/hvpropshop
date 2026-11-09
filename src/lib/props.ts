@@ -2,6 +2,7 @@ import { readItems } from "@directus/sdk";
 import directus from "@/lib/directus";
 import { Prop } from "@/types";
 import { parseLocation, resolveSort } from "@/lib/browse";
+import { categoryIdsForSlug } from "@/lib/catalog";
 
 export const PAGE_SIZE = 12;
 
@@ -24,13 +25,17 @@ export interface PropQuery {
   vendor?: string | null;
   /** "City, ST" — matches the vendor's pickup location */
   loc?: string | null;
+  /** Category + subcategory IDs (resolved from `category`); preferred over slug matching */
+  categoryIds?: string[] | null;
 }
 
 /** Directus filter for published props matching the query. */
-export function buildPropFilter({ category, search, vendor, loc }: PropQuery) {
+export function buildPropFilter({ category, categoryIds, search, vendor, loc }: PropQuery) {
   const and: Record<string, unknown>[] = [{ status: { _eq: "published" } }];
 
-  if (category) {
+  if (categoryIds?.length) {
+    and.push({ category: { id: { _in: categoryIds } } });
+  } else if (category) {
     and.push({
       _or: [
         { category: { slug: { _eq: category } } },
@@ -66,11 +71,12 @@ export function buildPropFilter({ category, search, vendor, loc }: PropQuery) {
 }
 
 /** A page of props for the feed. */
-export function getPropsPage(query: PropQuery & { sort?: string | null; offset?: number }) {
+export async function getPropsPage(query: PropQuery & { sort?: string | null; offset?: number }) {
+  const categoryIds = query.categoryIds ?? (await categoryIdsForSlug(query.category));
   return directus.request<Prop[]>(
     readItems("props", {
       fields: [...CARD_FIELDS],
-      filter: buildPropFilter(query),
+      filter: buildPropFilter({ ...query, categoryIds }),
       limit: PAGE_SIZE,
       offset: query.offset ?? 0,
       sort: resolveSort(query.sort),

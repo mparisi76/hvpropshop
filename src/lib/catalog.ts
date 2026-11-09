@@ -51,17 +51,29 @@ export const getCatalog = cache(async () => {
 /** A category (parent or child) by slug, with its parent for breadcrumbs. */
 export function findCategory(tree: CategoryTree, slug: string | undefined) {
   if (!slug) return null;
-  for (const parent of Object.values(tree)) {
+  for (const [parentId, parent] of Object.entries(tree)) {
     if (parent.slug === slug) {
-      return { current: { name: parent.name, slug: parent.slug, count: parent.totalCount }, parent: undefined };
+      return {
+        current: { name: parent.name, slug: parent.slug, count: parent.totalCount },
+        parent: undefined,
+        ids: [parentId, ...Object.keys(parent.children)],
+      };
     }
-    const child = Object.values(parent.children).find((c) => c.slug === slug);
-    if (child) {
+    const childEntry = Object.entries(parent.children).find(([, c]) => c.slug === slug);
+    if (childEntry) {
+      const [childId, child] = childEntry;
       return {
         current: { name: child.name, slug: child.slug, count: child.count },
         parent: { name: parent.name, slug: parent.slug },
+        ids: [childId],
       };
     }
   }
   return null;
+}
+
+/** Category IDs for a slug (the category plus its subcategories), or null if unknown. */
+export async function categoryIdsForSlug(slug: string | null | undefined) {
+  if (!slug) return null;
+  return findCategory((await getCatalog()).tree, slug)?.ids ?? null;
 }

@@ -41,13 +41,19 @@ export function categoryHref(keepQuery: string, slug?: string) {
 
 /* ---------- Clean URLs ---------- */
 
-/** "Kingston, NY" → "kingston-ny" */
-export function locationSlug(label: string) {
-  return label
+/** "Cleared Art & Signs" → "cleared-art-signs" */
+export function slugify(text: string) {
+  return text
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+/** "Kingston, NY" → "kingston-ny" */
+export const locationSlug = slugify;
+
+/** A category's slug, made from its name if Directus doesn't have one. */
+export const categorySlug = (c: { slug?: string | null; name: string }) => c.slug?.trim() || slugify(c.name);
 
 export const categoryPath = (slug: string) => `/rentals/${encodeURIComponent(slug)}`;
 export const locationPath = (label: string) => `/prop-rentals/${locationSlug(label)}`;
