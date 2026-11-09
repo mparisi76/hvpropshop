@@ -60,15 +60,19 @@ export async function getVendorFootprint(vendorId: string, token?: string): Prom
   );
   const propIds = props.map((p) => String(p.id));
 
+  type InquiryRow = { id: string | number; status: string; end_date: string };
+  type RentalRow = { id: string | number; kind: string | null; payout_status: string | null; end_date: string | null };
+  type ApplicationRow = { id: string | number; email: string };
+
   const [inquiries, rentals, uploads, applications] = await Promise.all([
     propIds.length
-      ? asAdmin<{ id: string | number; status: string; end_date: string }[]>(
+      ? asAdmin<InquiryRow[]>(
           readItems("inquiries", { fields: ["id", "status", "end_date"], filter: { prop_id: { _in: propIds } }, limit: -1 }),
           token
         )
-      : Promise.resolve([]),
+      : Promise.resolve([] as InquiryRow[]),
     propIds.length
-      ? asAdmin<{ id: string | number; kind: string | null; payout_status: string | null; end_date: string | null }[]>(
+      ? asAdmin<RentalRow[]>(
           readItems("rentals", {
             fields: ["id", "kind", "payout_status", "end_date"],
             filter: { prop_id: { _in: propIds } },
@@ -76,13 +80,13 @@ export async function getVendorFootprint(vendorId: string, token?: string): Prom
           }),
           token
         )
-      : Promise.resolve([]),
+      : Promise.resolve([] as RentalRow[]),
     // Files they uploaded that aren't attached to anything (e.g. abandoned uploads)
     asAdmin<{ id: string }[]>(readFiles({ fields: ["id"], filter: { uploaded_by: { _eq: vendorId } }, limit: -1 }), token).catch(
       () => [] as { id: string }[]
     ),
     user.email
-      ? asAdmin<{ id: string | number; email: string }[]>(
+      ? asAdmin<ApplicationRow[]>(
           readItems("vendor_applications", {
             fields: ["id", "email"],
             filter: { email: { _icontains: user.email } },
@@ -91,8 +95,8 @@ export async function getVendorFootprint(vendorId: string, token?: string): Prom
           token
         )
           .then((rows) => rows.filter((r) => r.email?.toLowerCase() === user.email!.toLowerCase()))
-          .catch(() => [] as { id: string | number; email: string }[])
-      : Promise.resolve([]),
+          .catch(() => [] as ApplicationRow[])
+      : Promise.resolve([] as ApplicationRow[]),
   ]);
 
   const fileIds = [
@@ -174,8 +178,8 @@ export async function deleteVendorEverything(f: VendorFootprint, token: string) 
     }
   };
 
-  if (f.inquiryIds.length) await step("booking requests", () => asAdmin(deleteItems("inquiries", f.inquiryIds), token));
-  if (f.rentalIds.length) await step("bookings and blocks", () => asAdmin(deleteItems("rentals", f.rentalIds), token));
+  if (f.inquiryIds.length) await step("booking requests", () => asAdmin(deleteItems("inquiries", f.inquiryIds.map(String)), token));
+  if (f.rentalIds.length) await step("bookings and blocks", () => asAdmin(deleteItems("rentals", f.rentalIds.map(String)), token));
   if (f.propIds.length) {
     // Detach gallery photos first so junction rows can't block deleting the listings
     await asAdmin(updateItems("props", f.propIds, { photo_gallery: [] }), token).catch((error) =>
@@ -184,7 +188,7 @@ export async function deleteVendorEverything(f: VendorFootprint, token: string) 
     await step("listings", () => asAdmin(deleteItems("props", f.propIds), token));
   }
   if (f.applicationIds.length) {
-    await asAdmin(deleteItems("vendor_applications", f.applicationIds), token).catch((error) => {
+    await asAdmin(deleteItems("vendor_applications", f.applicationIds.map(String)), token).catch((error) => {
       console.warn("[delete-vendor] Couldn't delete applications:", error);
       warnings.push("Their application couldn't be deleted; remove it in Directus.");
     });
