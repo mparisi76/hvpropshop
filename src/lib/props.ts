@@ -2,7 +2,8 @@ import { readItems } from "@directus/sdk";
 import directus from "@/lib/directus";
 import { Prop } from "@/types";
 import { parseLocation, resolveSort } from "@/lib/browse";
-import { categoryIdsForSlug } from "@/lib/catalog";
+import { unstable_cache } from "next/cache";
+import { CATALOG_TAG, CATALOG_TTL, categoryIdsForSlug } from "@/lib/catalog";
 
 export const PAGE_SIZE = 12;
 
@@ -95,4 +96,31 @@ export function getPublishedPropsByIds(ids: string[]) {
       limit: 100,
     })
   );
+}
+
+/**
+ * First page of results + total count for a browse view. Cached across requests
+ * (cleared with the catalog when listings change) so revisiting a category or
+ * town is fast. Searches aren't cached: every query is different.
+ */
+export async function getBrowseResults(query: PropQuery & { sort?: string | null }) {
+  const run = async () => {
+    const categoryIds = query.categoryIds ?? (await categoryIdsForSlug(query.category));
+    const q = { ...query, categoryIds };
+    const [items, countRows] = await Promise.all([
+      getPropsPage(q),
+      directus.request(readItems("props", { filter: buildPropFilter(q), aggregate: { count: "*" } })),
+    ]);
+    const total = parseInt(String((countRows as { count: string | number }[])[0]?.count ?? 0)) || 0;
+    return { items, total };
+  };
+
+  if (query.search) return run();
+  const key = JSON.stringify({
+    category: query.categoryIds?.slice().sort() ?? query.category ?? null,
+    loc: query.loc ?? null,
+    vendor: query.vendor ?? null,
+    sort: query.sort ?? null,
+  });
+  return unstable_cache(run, ["browse-v1", key], { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] })();
 }

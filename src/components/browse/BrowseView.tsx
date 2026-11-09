@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { readItems } from "@directus/sdk";
-import directus from "@/lib/directus";
 import CategorySidebar from "@/components/CategorySidebar";
 import MobileCategoryBar from "@/components/MobileCategoryBar";
 import PropFeed from "@/components/PropFeed";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import BrowseControls from "@/components/BrowseControls";
-import { buildPropFilter, getPropsPage } from "@/lib/props";
+import { getBrowseResults } from "@/lib/props";
 import { findCategory, getCatalog } from "@/lib/catalog";
 
 /**
@@ -36,11 +34,7 @@ export default async function BrowseView({
   const found = findCategory(catalog.tree, category);
   const query = { category, categoryIds: found?.ids ?? null, search: search?.toLowerCase(), loc };
 
-  const [initialItems, countRows] = await Promise.all([
-    getPropsPage({ ...query, sort }),
-    directus.request(readItems("props", { filter: buildPropFilter(query), aggregate: { count: "*" } })),
-  ]);
-  const totalCount = parseInt(String((countRows as { count: string | number }[])[0]?.count ?? 0)) || 0;
+  const { items: initialItems, total: totalCount } = await getBrowseResults({ ...query, sort });
 
   // Category links keep the location (unless it's in the path) and sort
   const keep = new URLSearchParams();
