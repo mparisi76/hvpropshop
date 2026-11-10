@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, startTransition, useActionState } from "react";
+import { Suspense, startTransition, useActionState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AuthCard from "@/components/AuthCard";
@@ -10,6 +10,11 @@ import { acceptInvite, type AcceptState } from "./action";
 function AcceptForm() {
   const token = useSearchParams().get("token") ?? "";
   const [state, action, pending] = useActionState<AcceptState, FormData>(acceptInvite, null);
+
+  // Full page load into the dashboard, so it's rendered fresh as the new account
+  useEffect(() => {
+    if (state?.redirectTo) window.location.assign(state.redirectTo);
+  }, [state?.redirectTo]);
 
   if (!token) {
     return (
@@ -45,8 +50,8 @@ function AcceptForm() {
         <label htmlFor="confirm" className="label">Confirm password</label>
         <PasswordInput id="confirm" name="confirm" required minLength={8} autoComplete="new-password" />
       </div>
-      <button type="submit" disabled={pending} className="btn-primary w-full">
-        {pending ? "Setting up…" : "Create my account"}
+      <button type="submit" disabled={pending || Boolean(state?.redirectTo)} className="btn-primary w-full">
+        {pending || state?.redirectTo ? "Setting up…" : "Create my account"}
       </button>
     </form>
   );

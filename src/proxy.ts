@@ -14,8 +14,6 @@ import {
  *
  * - Any page load or save: if the Directus access token is missing or about
  *   to expire, swap the refresh token for new tokens and pass them on.
- * - /login: if the vendor already has a working session, skip straight to
- *   the dashboard.
  */
 
 // Directus rotates refresh tokens, so two requests refreshing with the same
@@ -40,12 +38,6 @@ function withTokens(response: NextResponse, tokens: SessionTokens) {
   return response;
 }
 
-/** A same-site path to return to after login, or null if missing/unsafe. */
-function safeNext(value: string | null) {
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/login")) return null;
-  return value;
-}
-
 /** /login?next=<where they were going> */
 function toLogin(request: NextRequest) {
   const url = new URL("/login", request.url);
@@ -63,7 +55,6 @@ export async function proxy(request: NextRequest) {
   const access = request.cookies.get(ACCESS_COOKIE)?.value;
   const refresh = request.cookies.get(REFRESH_COOKIE)?.value;
   const { pathname } = request.nextUrl;
-  const isLogin = pathname === "/login";
   // Only page loads get bounced to login (not form saves, which can't follow a redirect)
   const isDashboardPage =
     (pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) && request.method === "GET";
@@ -71,15 +62,6 @@ export async function proxy(request: NextRequest) {
   const accessValid = Boolean(access) && tokenExpiry(access) - Date.now() > REFRESH_EARLY_MS;
 
   // Already logged in → skip the login page and go where they were headed
-  if (isLogin) {
-    const destination = new URL(safeNext(request.nextUrl.searchParams.get("next")) ?? "/dashboard", request.url);
-    if (accessValid) return NextResponse.redirect(destination);
-    if (refresh) {
-      const tokens = await refreshOnce(refresh);
-      if (tokens) return withTokens(NextResponse.redirect(destination), tokens);
-    }
-    return NextResponse.next();
-  }
 
   if (accessValid) return NextResponse.next();
   if (!refresh) return isDashboardPage ? toLogin(request) : NextResponse.next();

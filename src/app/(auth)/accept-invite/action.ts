@@ -4,9 +4,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { acceptUserInvite } from "@directus/sdk";
 import directus from "@/lib/directus";
-import { jwtPayload, loginWithPassword, setSessionCookies } from "@/lib/session";
+import { REFRESH_COOKIE, jwtPayload, loginWithPassword, logoutSession, setSessionCookies } from "@/lib/session";
 
-export type AcceptState = { error?: string } | null;
+/** `redirectTo` is set on success: the page does a full load so nothing from a previous session lingers. */
+export type AcceptState = { error?: string; redirectTo?: string } | null;
 
 const MIN_PASSWORD = 8;
 
@@ -26,11 +27,15 @@ export async function acceptInvite(_prev: AcceptState, formData: FormData): Prom
     return { error: "This invite link has expired or was already used. Ask HV Prop Shop for a new one." };
   }
 
-  // Sign them straight in
+  // Sign them straight in, replacing any session already in this browser
+  // (e.g. an admin testing the invite) so the dashboard shows the new vendor
   const email = jwtPayload(token)?.email;
   const tokens = typeof email === "string" ? await loginWithPassword(email, password) : null;
   if (!tokens) redirect("/login?next=/dashboard/profile");
 
-  setSessionCookies(await cookies(), tokens);
-  redirect("/dashboard/profile?welcome=1");
+  const store = await cookies();
+  const previous = store.get(REFRESH_COOKIE)?.value;
+  if (previous) await logoutSession(previous);
+  setSessionCookies(store, tokens);
+  return { redirectTo: "/dashboard/profile?welcome=1" };
 }
