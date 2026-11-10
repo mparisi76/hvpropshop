@@ -30,7 +30,6 @@ export default function ForgotPasswordPage() {
       <AuthCard
         title="Check your email"
         description="If an account exists for that address, we've sent a link to reset your password."
-        footer={backLink}
       >
         <Link href="/login" className="btn-secondary w-full">
           Return to login

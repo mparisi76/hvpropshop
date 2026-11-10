@@ -96,6 +96,7 @@ export default async function AdminApplications({ searchParams }: { searchParams
                 {a.message && <p className="whitespace-pre-wrap text-sm text-neutral-600">{a.message}</p>}
 
                 {tab === "new" && <ApplicationActions id={String(a.id)} name={a.name} />}
+                {tab === "approved" && <ApplicationActions id={String(a.id)} name={a.name} approved />}
               </li>
             );
           })}

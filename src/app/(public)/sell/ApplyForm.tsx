@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Check } from "lucide-react";
 import Select from "@/components/ui/Select";
+import TrackEvent from "@/components/TrackEvent";
 import { applyAsVendor, type ApplyState } from "@/app/actions/applyAsVendor";
 
 export default function ApplyForm() {
@@ -12,6 +13,7 @@ export default function ApplyForm() {
   if (state?.success) {
     return (
       <div className="card space-y-2 p-6">
+        <TrackEvent name="Vendor application sent" />
         <Check className="h-7 w-7 text-accent" aria-hidden />
         <h3 className="text-lg font-semibold">Application sent</h3>
         <p className="text-sm text-neutral-600">

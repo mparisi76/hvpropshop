@@ -2,27 +2,27 @@
 
 import directus from "@/lib/directus";
 import { passwordRequest } from "@directus/sdk";
+import { getSiteUrl } from "@/lib/baseUrl";
+import { reportError } from "@/lib/alerts";
 
+/**
+ * Ask Directus to email a password reset link. Directus sends the email itself
+ * (using its EMAIL_* settings). It deliberately does nothing for unknown
+ * addresses, and the page always shows the same message, so it never reveals
+ * whether an account exists. Real failures are alerted instead.
+ */
 export async function handleForgotPassword(formData: FormData) {
-  const email = formData.get("email") as string;
-  const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`;
+  const email = String(formData.get("email") ?? "").trim();
+  const resetUrl = `${await getSiteUrl()}/reset-password`;
 
   try {
     await directus.request(passwordRequest(email, resetUrl));
     return { success: true };
   } catch (error) {
-    // 1. We log the general error first
-    console.error("Directus Request Failed");
-
-    // 2. We check if this is an object with a 'response' property safely
-    if (typeof error === "object" && error !== null && "response" in error) {
-      const response = (error as { response: unknown }).response;
-      
-      if (typeof response === "object" && response !== null && "data" in response) {
-        console.error("Error Data:", response.data);
-      }
-    }
-
+    await reportError("Password reset request failed", error, {
+      resetUrl,
+      note: `If the message mentions the URL, add ${resetUrl} to PASSWORD_RESET_URL_ALLOW_LIST in Directus and restart it.`,
+    });
     return { error: "Something went wrong." };
   }
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
+import TrackEvent from "@/components/TrackEvent";
 import { getBooking } from "@/lib/bookings";
 import { recordPayment, stripe } from "@/lib/payments";
 import { reportError } from "@/lib/alerts";
@@ -38,6 +39,11 @@ export default async function SuccessPage({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-neutral-50 px-4 py-12">
       <div className="card w-full max-w-md p-6 shadow-sm sm:p-8">
+        <TrackEvent
+          name="Booking paid"
+          eventKey={session.id}
+          props={{ amount: Math.round((session.amount_total || 0) / 100) }}
+        />
         <CheckCircle2 className="h-8 w-8 text-accent" aria-hidden />
         <h1 className="mt-4 text-xl font-semibold tracking-tight">Booking confirmed</h1>
         <p className="mt-1 text-sm text-neutral-600">

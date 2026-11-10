@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import { Check } from "lucide-react";
 import { Prop } from "@/types";
 import Select from "@/components/ui/Select";
+import TrackEvent from "@/components/TrackEvent";
 import { requestBooking, type BookingRequestState } from "@/app/actions/requestBooking";
 import { businessToday } from "@/lib/site";
 import { CANCELLATION_POLICY } from "@/lib/policy";
@@ -40,6 +41,7 @@ export default function InquiryForm({ item, onClose }: InquiryFormProps) {
   if (state?.success) {
     return (
       <div className="space-y-4">
+        <TrackEvent name="Booking request sent" props={{ item: String(item.id) }} />
         <Check className="h-8 w-8 text-accent" aria-hidden />
         <h2 className="text-xl font-semibold tracking-tight">Request sent</h2>
         <p className="text-sm text-neutral-600">

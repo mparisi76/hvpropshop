@@ -3,6 +3,7 @@
 import { useActionState, useCallback, useState } from "react";
 import { Check } from "lucide-react";
 import Drawer from "@/components/ui/Drawer";
+import TrackEvent from "@/components/TrackEvent";
 import { sendRequest, type RequestState, type RequestType } from "@/app/actions/sendRequest";
 import { businessToday } from "@/lib/site";
 
@@ -60,6 +61,10 @@ function RequestForm({
   if (state?.success) {
     return (
       <div className="space-y-4">
+        <TrackEvent
+          name={type === "quote" ? "Quote request sent" : "Pull list request sent"}
+          props={{ items: itemIds.length }}
+        />
         <Check className="h-8 w-8 text-accent" aria-hidden />
         <h2 className="text-xl font-semibold tracking-tight">Request sent</h2>
         <p className="text-sm text-neutral-600">

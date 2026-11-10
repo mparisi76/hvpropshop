@@ -4,7 +4,16 @@ import { useState, useTransition } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { approveApplication, declineApplication } from "../actions";
 
-export default function ApplicationActions({ id, name }: { id: string; name: string }) {
+export default function ApplicationActions({
+  id,
+  name,
+  approved = false,
+}: {
+  id: string;
+  name: string;
+  /** Already approved: offer to re-send the invite instead of approve/decline */
+  approved?: boolean;
+}) {
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState("");
   const [result, setResult] = useState<{ error?: string; message?: string } | null>(null);
@@ -24,6 +33,17 @@ export default function ApplicationActions({ id, name }: { id: string; name: str
       <p className="flex items-center gap-1 text-sm text-accent">
         <Check className="h-4 w-4" /> {result.message}
       </p>
+    );
+  }
+
+  if (approved) {
+    return (
+      <div className="space-y-2">
+        <button type="button" disabled={pending} onClick={() => run("approve", () => approveApplication(id))} className="btn-secondary h-9!">
+          {busy === "approve" && <Loader2 className="h-4 w-4 animate-spin" />} Resend invite
+        </button>
+        {result?.error && <p className="text-sm text-red-700">{result.error}</p>}
+      </div>
     );
   }
 

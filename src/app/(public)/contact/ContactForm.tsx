@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Check } from "lucide-react";
 import Select from "@/components/ui/Select";
+import TrackEvent from "@/components/TrackEvent";
 import { sendContact, type ContactState } from "@/app/actions/sendContact";
 
 export default function ContactForm({ defaultTopic }: { defaultTopic?: string }) {
@@ -12,6 +13,7 @@ export default function ContactForm({ defaultTopic }: { defaultTopic?: string })
   if (state?.success) {
     return (
       <div className="card space-y-2 p-6">
+        <TrackEvent name="Contact message sent" />
         <Check className="h-7 w-7 text-accent" aria-hidden />
         <h2 className="text-lg font-semibold">Message sent</h2>
         <p className="text-sm text-neutral-600">Thanks for getting in touch. We&apos;ll reply by email, usually within a day.</p>

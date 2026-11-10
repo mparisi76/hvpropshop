@@ -84,7 +84,6 @@ export async function approveApplication(id: string): Promise<Result> {
   } catch {
     return { error: "Application not found." };
   }
-  if (app.status === "approved") return { error: "Already approved." };
 
   const email = app.email.trim().toLowerCase();
 
@@ -110,7 +109,10 @@ export async function approveApplication(id: string): Promise<Result> {
   if (existing && existing.status !== "invited") {
     const who = existing.shop_name || existing.first_name || "an existing user";
     return {
-      error: `${app.email} already belongs to ${who}. No invite was sent and nothing was changed. If they're the same person, they can log in with their existing account.`,
+      error:
+        app.status === "approved"
+          ? `${who} has already accepted their invite and set up their account.`
+          : `${app.email} already belongs to ${who}. No invite was sent and nothing was changed. If they're the same person, they can log in with their existing account.`,
     };
   }
 

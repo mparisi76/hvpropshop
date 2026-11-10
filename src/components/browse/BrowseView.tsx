@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import PropFeed from "@/components/PropFeed";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import BrowseControls from "@/components/BrowseControls";
+import TrackEvent from "@/components/TrackEvent";
 import { getBrowseResults } from "@/lib/props";
 import { findCategory, getCatalog } from "@/lib/catalog";
 
@@ -43,6 +44,13 @@ export default async function BrowseView({
 
   return (
     <>
+      {search && (
+        <TrackEvent
+          name="Search"
+          eventKey={`${search}|${category ?? ""}|${loc ?? ""}`}
+          props={{ query: search.toLowerCase(), results: totalCount, zero: totalCount === 0, category, location: loc }}
+        />
+      )}
       <div className="mb-6 border-b border-neutral-200 pb-5">
         {found ? <Breadcrumbs parent={found.parent} current={found.current} /> : eyebrow}
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900 md:text-3xl">
