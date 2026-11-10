@@ -64,10 +64,12 @@ export default function ApplyForm() {
           name="inventory"
           required
           rows={3}
+          maxLength={1000}
           defaultValue={v.inventory}
           placeholder="e.g. Mid-century furniture, vintage signage, 70s kitchenware"
           className="input resize-y"
         />
+        <p className="mt-1.5 text-xs text-neutral-500">This appears on your vendor page once you&apos;re approved.</p>
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">

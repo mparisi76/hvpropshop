@@ -8,12 +8,12 @@ import { Prop } from "@/types";
 import { CONTACT_EMAIL } from "@/lib/site";
 import PropFeed from "@/components/PropFeed";
 import JsonLd from "@/components/JsonLd";
+import { getCatalog } from "@/lib/catalog";
+import { categoryPath } from "@/lib/browse";
 import { absoluteUrl, pageMeta, previewImage } from "@/lib/seo";
 import VendorAvatar from "@/components/VendorAvatar";
 import FeaturedBadge from "@/components/FeaturedBadge";
 import {
-  formatInventoryType,
-  getInventoryTypeField,
   getVendor,
   VENDOR_CARD_FIELDS,
   vendorLocation,
@@ -46,7 +46,7 @@ export default async function VendorPage({ params }: Params) {
   const vendor = await getVendor(id);
   if (!vendor) notFound();
 
-  const inventoryFieldPromise = getInventoryTypeField();
+  const catalogPromise = getCatalog();
   const items = await directus.request<Prop[]>(
     readItems("props", {
       fields: [
@@ -68,8 +68,8 @@ export default async function VendorPage({ params }: Params) {
 
   const name = vendorName(vendor);
   const location = vendorLocation(vendor);
-  const inventoryField = await inventoryFieldPromise;
-  const specialties = formatInventoryType(vendor.inventory_type, inventoryField?.choices);
+  const categories = (await catalogPromise).vendorCategories[id] ?? [];
+  const about = vendor.inventory?.trim() || null;
   const website = vendorWebsite(vendor.website);
   const contactHref = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
     `Inquiry about ${name}`
@@ -80,7 +80,11 @@ export default async function VendorPage({ params }: Params) {
     "@type": "Store",
     name,
     url: absoluteUrl(`/vendors/${id}`),
-    description: specialties ? `Prop and set dressing rentals: ${specialties}` : "Prop and set dressing rentals",
+    description:
+      about ??
+      (categories.length
+        ? `Prop and set dressing rentals: ${categories.map((c) => c.name).join(", ")}`
+        : "Prop and set dressing rentals"),
     ...(vendor.shop_logo ? { logo: previewImage(vendor.shop_logo, "inside"), image: previewImage(vendor.shop_logo, "inside") } : {}),
     ...(vendor.city || vendor.state
       ? {
@@ -126,11 +130,19 @@ export default async function VendorPage({ params }: Params) {
                     {vendor.itemCount} {vendor.itemCount === 1 ? "item" : "items"} listed
                   </span>
                 </div>
-                {specialties && (
-                  <p className="mt-3 max-w-2xl text-sm text-neutral-700">
-                    <span className="text-neutral-500">Specializes in: </span>
-                    {specialties}
-                  </p>
+                {about && <p className="mt-3 max-w-2xl whitespace-pre-line text-sm text-neutral-700">{about}</p>}
+                {categories.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {categories.map((c) => (
+                      <Link
+                        key={c.slug}
+                        href={categoryPath(c.slug)}
+                        className="rounded-md border border-neutral-200 bg-white px-2 py-0.5 text-xs text-neutral-700 hover:border-neutral-400"
+                      >
+                        {c.name}
+                      </Link>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

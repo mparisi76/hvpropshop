@@ -32,25 +32,13 @@ export async function updateProfile(
   const websiteInput = clean(formData.get("website"), 300);
   const website = websiteInput ? vendorWebsite(websiteInput) : null;
 
-  // inventory_type is a Directus dropdown: a single value, or a list if the
-  // field uses a multi-select interface (the form tells us which).
-  const inventoryValues = formData
-    .getAll("inventory_type")
-    .flatMap((v) => String(v).split(","))
-    .map((s) => s.trim().slice(0, 100))
-    .filter(Boolean);
-  const inventoryType =
-    formData.get("inventory_type_format") === "array"
-      ? inventoryValues
-      : inventoryValues[0] ?? null;
-
   // Only these fields can be changed from here (featured_vendor is admin-only).
   const update: Partial<Vendor> = {
     shop_name: shopName,
     city: clean(formData.get("city"), 80) || null,
     state: clean(formData.get("state"), 2).toUpperCase() || null,
     website: website?.href ?? null,
-    inventory_type: inventoryType,
+    inventory: clean(formData.get("inventory"), 1000) || null,
   };
 
   const submitted = { ...update, website: websiteInput || null };

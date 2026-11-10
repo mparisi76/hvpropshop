@@ -4,9 +4,8 @@ import { pageMeta } from "@/lib/seo";
 import { MapPin } from "lucide-react";
 import VendorAvatar from "@/components/VendorAvatar";
 import FeaturedBadge from "@/components/FeaturedBadge";
+import { getCatalog } from "@/lib/catalog";
 import {
-  formatInventoryType,
-  getInventoryTypeField,
   getVendorsCached,
   vendorLocation,
   vendorName,
@@ -20,10 +19,7 @@ export const metadata: Metadata = pageMeta({
 });
 
 export default async function VendorsPage() {
-  const [vendors, inventoryField] = await Promise.all([
-    getVendorsCached(),
-    getInventoryTypeField(),
-  ]);
+  const [vendors, catalog] = await Promise.all([getVendorsCached(), getCatalog()]);
 
   return (
     <>
@@ -51,7 +47,7 @@ export default async function VendorsPage() {
             {vendors.map((v) => {
               const name = vendorName(v);
               const location = vendorLocation(v);
-              const specialties = formatInventoryType(v.inventory_type, inventoryField?.choices);
+              const categories = catalog.vendorCategories[String(v.id)] ?? [];
               return (
                 <li key={v.id}>
                   <Link
@@ -70,11 +66,21 @@ export default async function VendorsPage() {
                           {location}
                         </p>
                       )}
-                      {specialties && (
-                        <p className="mt-2 line-clamp-2 text-sm text-neutral-700">{specialties}</p>
+                      {v.inventory && (
+                        <p className="mt-2 line-clamp-2 text-sm text-neutral-700">{v.inventory}</p>
                       )}
                       <p className="mt-2 text-xs text-neutral-500">
-                        {v.itemCount} {v.itemCount === 1 ? "item" : "items"} listed
+                        {v.itemCount} {v.itemCount === 1 ? "item" : "items"}
+                        {categories.length > 0 && (
+                          <>
+                            {" · "}
+                            {categories
+                              .slice(0, 3)
+                              .map((c) => c.name)
+                              .join(", ")}
+                            {categories.length > 3 && " and more"}
+                          </>
+                        )}
                       </p>
                     </div>
                   </Link>

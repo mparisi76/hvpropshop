@@ -82,6 +82,6 @@ export interface Vendor {
   featured_vendor?: boolean | null;
   /** Directus file id of the shop logo */
   shop_logo?: string | null;
-  /** Free text, or an array if the field is a multi-select in Directus. */
-  inventory_type?: string | string[] | null;
+  /** Free text: what the vendor rents (also on their application) */
+  inventory?: string | null;
 }

@@ -116,6 +116,7 @@ export interface VendorApplication {
   shop_name: string;
   city: string | null;
   state: string | null;
+  /** "What do you rent?" — copied to directus_users.inventory on approval */
   inventory: string | null;
   item_count: string | null;
   website: string | null;

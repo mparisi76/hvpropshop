@@ -7,8 +7,6 @@ import VendorAvatar from "@/components/VendorAvatar";
 import { compressImage } from "@/lib/images";
 import { Vendor } from "@/types";
 import FeaturedBadge from "@/components/FeaturedBadge";
-import Select from "@/components/ui/Select";
-import type { InventoryTypeField } from "@/lib/vendors";
 import {
   removeShopLogo,
   updateProfile,
@@ -17,14 +15,7 @@ import {
   type ProfileState,
 } from "./actions";
 
-export default function ProfileForm({
-  user: initialUser,
-  inventoryField,
-}: {
-  user: Vendor;
-  /** Dropdown config from Directus; null if it couldn't be loaded */
-  inventoryField: InventoryTypeField | null;
-}) {
+export default function ProfileForm({ user: initialUser }: { user: Vendor }) {
   const [state, formAction, isPending] = useActionState<ProfileState, FormData>(
     updateProfile,
     null
@@ -32,24 +23,6 @@ export default function ProfileForm({
 
   // After a save (or failed save), show what was submitted rather than the original values
   const user: Vendor = { ...initialUser, ...state?.values };
-
-  const choices = inventoryField?.choices ?? [];
-  const isMultiple =
-    inventoryField?.multiple ?? Array.isArray(initialUser.inventory_type);
-  const selected = (
-    Array.isArray(user.inventory_type)
-      ? user.inventory_type
-      : user.inventory_type
-        ? [user.inventory_type]
-        : []
-  ).map(String);
-  // Keep any saved value that's no longer one of the dropdown choices
-  const options = [
-    ...choices,
-    ...selected
-      .filter((v) => !choices.some((c) => c.value === v))
-      .map((v) => ({ text: v, value: v })),
-  ];
 
   return (
     <>
@@ -84,54 +57,21 @@ export default function ProfileForm({
           />
         </Field>
 
-        <input type="hidden" name="inventory_type_format" value={isMultiple ? "array" : "string"} />
-        {choices.length === 0 ? (
-          <Field
-            label="What you rent"
-            htmlFor="inventory_type"
-            hint={isMultiple ? "Separate multiple types with commas." : undefined}
-          >
-            <input
-              id="inventory_type"
-              name="inventory_type"
-              defaultValue={selected.join(", ")}
-              className="input"
-            />
-          </Field>
-        ) : isMultiple ? (
-          <fieldset>
-            <legend className="label">What you rent</legend>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {options.map((c) => (
-                <label key={c.value} className="flex items-center gap-2 text-sm text-neutral-800">
-                  <input
-                    type="checkbox"
-                    name="inventory_type"
-                    value={c.value}
-                    defaultChecked={selected.includes(c.value)}
-                    className="h-4 w-4 rounded border-neutral-300 accent-neutral-900"
-                  />
-                  {c.text}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        ) : (
-          <Field label="What you rent" htmlFor="inventory_type">
-            <Select
-              id="inventory_type"
-              name="inventory_type"
-              defaultValue={selected[0] ?? ""}
-            >
-              <option value="">Select…</option>
-              {options.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.text}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        )}
+        <Field
+          label="What you rent"
+          htmlFor="inventory"
+          hint="Shown on your vendor page. The categories of your listings are shown automatically too."
+        >
+          <textarea
+            id="inventory"
+            name="inventory"
+            rows={3}
+            maxLength={1000}
+            defaultValue={user.inventory ?? ""}
+            placeholder="e.g. Mid-century furniture, vintage signage and 70s kitchenware"
+            className="input resize-y"
+          />
+        </Field>
 
         <div className="grid gap-5 sm:grid-cols-[1fr_6rem]">
           <Field label="City" htmlFor="city" hint="Where productions pick up.">

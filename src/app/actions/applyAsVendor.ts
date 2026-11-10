@@ -19,16 +19,18 @@ const esc = (s: string) =>
 
 export async function applyAsVendor(_prev: ApplyState, formData: FormData): Promise<ApplyState> {
   const values = Object.fromEntries(
-    FIELDS.map((f) => [f, clean(formData.get(f), f === "message" || f === "inventory" ? 2000 : 200)])
+    FIELDS.map((f) => [f, clean(formData.get(f), f === "message" ? 2000 : f === "inventory" ? 1000 : 200)])
   ) as Record<(typeof FIELDS)[number], string>;
   values.state = values.state.toUpperCase().slice(0, 2);
 
+  const echo = values;
+
   if (clean(formData.get("website_url"))) return { success: true }; // honeypot
-  if (!values.name) return { error: "Please enter your name.", values };
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) return { error: "Please enter a valid email address.", values };
-  if (!values.shop_name) return { error: "Please enter your shop or business name.", values };
-  if (!values.city) return { error: "Please enter where your inventory is.", values };
-  if (!values.inventory) return { error: "Tell us a little about what you rent.", values };
+  if (!values.name) return { error: "Please enter your name.", values: echo };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) return { error: "Please enter a valid email address.", values: echo };
+  if (!values.shop_name) return { error: "Please enter your shop or business name.", values: echo };
+  if (!values.city) return { error: "Please enter where your inventory is.", values: echo };
+  if (!values.inventory) return { error: "Tell us what you rent.", values: echo };
 
   // 1. Save (if the collection exists) — the email below still goes out either way
   let saved = false;
@@ -54,7 +56,7 @@ export async function applyAsVendor(_prev: ApplyState, formData: FormData): Prom
         <table style="border-collapse:collapse">
           ${row("Name", values.name)}${row("Email", values.email)}${row("Phone", values.phone)}
           ${row("Shop", values.shop_name)}${row("Location", [values.city, values.state].filter(Boolean).join(", "))}
-          ${row("Inventory", values.inventory)}${row("Size", values.item_count)}${row("Website", values.website)}
+          ${row("Rents", values.inventory)}${row("Size", values.item_count)}${row("Website", values.website)}
           ${row("Notes", values.message)}
         </table>
         ${saved ? `<p><a href="${base}/admin/applications">Review in the admin dashboard</a></p>` : `<p style="color:#b45309">Not saved to Directus.</p>`}
@@ -83,7 +85,7 @@ export async function applyAsVendor(_prev: ApplyState, formData: FormData): Prom
   }
 
   if (!saved && !adminEmailed) {
-    return { error: `We couldn't send your application. Please email ${CONTACT_EMAIL} instead.`, values };
+    return { error: `We couldn't send your application. Please email ${CONTACT_EMAIL} instead.`, values: echo };
   }
   return { success: true };
 }

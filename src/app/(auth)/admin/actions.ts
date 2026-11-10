@@ -129,6 +129,8 @@ export async function approveApplication(id: string): Promise<Result> {
     state: app.state,
     phone: app.phone,
     website: vendorWebsite(app.website)?.href ?? null,
+    // "What do you rent?" — the same free-text field on the application and the account
+    inventory: app.inventory?.trim() || null,
   };
   let roleId: string;
   try {

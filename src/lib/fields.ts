@@ -76,3 +76,25 @@ export async function withOptionalField<T>(
     return withoutField();
   }
 }
+
+/**
+ * Like withOptionalField, for several optional fields: load with all `fields`;
+ * each time Directus refuses one of `optional`, drop it and try again.
+ */
+export async function withOptionalFields<T>(
+  fields: readonly string[],
+  optional: readonly string[],
+  load: (fields: string[]) => Promise<T>
+): Promise<T> {
+  let current = [...fields];
+  for (;;) {
+    try {
+      return await load(current);
+    } catch (error) {
+      const blocked = optional.find((f) => current.includes(f) && isFieldForbidden(error, f));
+      if (!blocked) throw error;
+      console.warn(`[permissions] "${blocked}" isn't readable here — check the Directus policy. Continuing without it.`);
+      current = current.filter((f) => f !== blocked);
+    }
+  }
+}

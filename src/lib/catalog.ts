@@ -62,9 +62,27 @@ const loadCatalog = unstable_cache(
   }
   const locations = [...byLocation.values()].sort((a, b) => a.label.localeCompare(b.label));
 
-  return { tree, itemCount: allItems.length, vendorCount, locations };
+  // What each vendor rents, from their listings: top-level categories, most used first
+  const counts = new Map<string, Map<string, number>>();
+  for (const item of allItems) {
+    const vendorId = item.user_created?.id;
+    const top = item.category?.parent ? tree[String(item.category.parent.id)] : item.category ? tree[String(item.category.id)] : null;
+    if (!vendorId || !top) continue;
+    const forVendor = counts.get(vendorId) ?? new Map<string, number>();
+    forVendor.set(top.slug, (forVendor.get(top.slug) ?? 0) + 1);
+    counts.set(vendorId, forVendor);
+  }
+  const nameBySlug = new Map(Object.values(tree).map((c) => [c.slug, c.name]));
+  const vendorCategories: Record<string, { name: string; slug: string }[]> = {};
+  for (const [vendorId, bySlug] of counts) {
+    vendorCategories[vendorId] = [...bySlug.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([slug]) => ({ slug, name: nameBySlug.get(slug) ?? slug }));
+  }
+
+  return { tree, itemCount: allItems.length, vendorCount, locations, vendorCategories };
   },
-  ["catalog-v1"],
+  ["catalog-v2"],
   { revalidate: CATALOG_TTL, tags: [CATALOG_TAG] }
 );
 
