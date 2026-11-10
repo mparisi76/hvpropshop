@@ -4,6 +4,7 @@ import PropFeed from "@/components/PropFeed";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import BrowseControls from "@/components/BrowseControls";
 import TrackEvent from "@/components/TrackEvent";
+import SearchAlertForm from "@/components/browse/SearchAlertForm";
 import { getBrowseResults } from "@/lib/props";
 import { findCategory, getCatalog } from "@/lib/catalog";
 
@@ -126,6 +127,9 @@ export default async function BrowseView({
               </>
             )}
           </p>
+          {search && !nearMissing && (
+            <SearchAlertForm query={search} category={category} near={near} radius={radius} />
+          )}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             {category && search && (
               <Link href={`/?search=${encodeURIComponent(search)}`} className="btn-secondary">

@@ -12,6 +12,7 @@ import { addDays, businessDate, businessToday } from "@/lib/site";
 import { sendDuePayouts } from "@/lib/payouts";
 import { revalidateTag } from "next/cache";
 import { backfillVendorCoordinates } from "@/lib/geo";
+import { runSearchAlerts } from "@/lib/searchAlerts";
 import { CATALOG_TAG } from "@/lib/catalog";
 import { reportError } from "@/lib/alerts";
 
@@ -122,7 +123,12 @@ export async function runDailyBookingJobs() {
     if (geo.updated) revalidateTag(CATALOG_TAG, "max");
   });
 
-  // 5. Pay vendors for rentals whose return date has passed
+  // 5. Search alerts: email customers when something they searched for is listed
+  await step("search alerts", async () => {
+    await runSearchAlerts();
+  });
+
+  // 6. Pay vendors for rentals whose return date has passed
   await step("payouts", async () => {
     const payouts = await sendDuePayouts();
     summary.payoutsSent += payouts.paid;

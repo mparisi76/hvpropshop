@@ -17,6 +17,7 @@ export default function robots(): MetadataRoute.Robots {
         "/forgot-password",
         "/reset-password",
         "/accept-invite",
+        "/alerts/",
       ],
     },
     sitemap: absoluteUrl("/sitemap.xml"),

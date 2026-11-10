@@ -1,9 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Loader2, LocateFixed, MapPin, X } from "lucide-react";
 import Select from "@/components/ui/Select";
+import NearSearch from "@/components/browse/NearSearch";
 import { SORT_OPTIONS, locationPath } from "@/lib/browse";
 
 const RADII = [10, 25, 50, 100];
@@ -28,9 +27,6 @@ export default function BrowseControls({
   const sortParam = searchParams.get("sort");
   const sort = sortParam ?? (near ? "nearest" : SORT_OPTIONS[0].value);
 
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [locating, setLocating] = useState(false);
-  const [locateError, setLocateError] = useState<string | null>(null);
 
   const go = (path: string, params: URLSearchParams) => {
     const qs = params.toString();
@@ -57,27 +53,6 @@ export default function BrowseControls({
     go(pathname, params);
   };
 
-  const useMyLocation = () => {
-    if (!navigator.geolocation) {
-      setLocateError("Your browser can't share its location.");
-      return;
-    }
-    setLocating(true);
-    setLocateError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocating(false);
-        // ~100 m precision is plenty, and keeps exact positions out of URLs
-        setNear(`${pos.coords.latitude.toFixed(3)},${pos.coords.longitude.toFixed(3)}`);
-      },
-      () => {
-        setLocating(false);
-        setLocateError("Couldn't get your location. Type a town or ZIP instead.");
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 10 * 60 * 1000 }
-    );
-  };
-
   /* ----- Town pages: switch between towns ----- */
   const setTownPage = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -97,7 +72,6 @@ export default function BrowseControls({
   const sortOptions = SORT_OPTIONS.filter((o) => o.value !== "nearest" || near);
   const townOptions =
     currentLocation && !locations.includes(currentLocation) ? [currentLocation, ...locations] : locations;
-  const shownNear = near && isCoordinates(near) ? "My location" : near;
 
   return (
     <div className="flex flex-col items-end gap-1">
@@ -116,50 +90,7 @@ export default function BrowseControls({
           </div>
         ) : (
           <>
-            <form
-              role="search"
-              aria-label="Search near a town or ZIP"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setNear(inputRef.current?.value ?? "");
-              }}
-              className="relative w-52"
-            >
-              <MapPin className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" aria-hidden />
-              <input
-                key={near}
-                ref={inputRef}
-                name="near"
-                defaultValue={shownNear}
-                placeholder="Near town or ZIP"
-                aria-label="Near town or ZIP"
-                autoComplete="postal-code"
-                onFocus={(e) => near && isCoordinates(near) && e.currentTarget.select()}
-                className="input h-9! py-1.5! pl-8! pr-16!"
-              />
-              <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center">
-                {near && (
-                  <button
-                    type="button"
-                    onClick={() => setNear("")}
-                    className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-900"
-                    aria-label="Clear location"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={useMyLocation}
-                  disabled={locating}
-                  className="rounded p-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-                  aria-label="Use my location"
-                  title="Use my location"
-                >
-                  {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
-                </button>
-              </div>
-            </form>
+            <NearSearch key={near} near={near} vendorTowns={locations} onSearch={setNear} />
 
             {near && (
               <div className="w-28">
@@ -187,7 +118,6 @@ export default function BrowseControls({
           </Select>
         </div>
       </div>
-      {locateError && <p className="text-xs text-red-700">{locateError}</p>}
       {near && nearLabel && isCoordinates(near) && <p className="sr-only">Showing results near {nearLabel}</p>}
     </div>
   );

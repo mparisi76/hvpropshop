@@ -385,3 +385,46 @@ export async function emailVendorPayoutSent(p: {
     )
   );
 }
+
+/* ---------- Search alerts ---------- */
+
+export async function emailSearchAlertMatch(p: {
+  to: string;
+  query: string;
+  items: { id: string | number; name: string; price: number | null; thumbnail: string | null }[];
+  total: number;
+  resultsPath: string;
+  unsubscribePath: string;
+}) {
+  const base = await getSiteUrl();
+  const cards = p.items
+    .map(
+      (i) => `<tr>
+        <td style="padding:8px 12px 8px 0;vertical-align:top;width:72px">
+          ${
+            i.thumbnail
+              ? `<img src="${esc(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${i.thumbnail}?width=144&height=144&fit=cover&format=jpg`)}" width="72" height="72" alt="" style="border-radius:6px;display:block;object-fit:cover" />`
+              : ""
+          }
+        </td>
+        <td style="padding:8px 0;vertical-align:top">
+          <a href="${esc(`${base}/props/${i.id}`)}" style="color:#171717;font-weight:600;text-decoration:none">${esc(i.name)}</a>
+          ${i.price != null ? `<br><span style="color:#737373">${formatMoney(i.price)}/day</span>` : ""}
+        </td>
+      </tr>`
+    )
+    .join("");
+
+  return send(
+    p.to,
+    `Now listed: "${p.query}"`,
+    layout(
+      `New listings for "${p.query}"`,
+      `<p>Something you searched for is now available on HV Prop Shop:</p>
+       <table style="border-collapse:collapse">${cards}</table>
+       ${button(`${base}${p.resultsPath}`, p.total > p.items.length ? `See all ${p.total} results` : "See results")}
+       <p style="color:#737373;font-size:12px">You asked us to let you know when this was listed. This was a one-time alert.
+       <a href="${esc(`${base}${p.unsubscribePath}`)}" style="color:#737373">Cancel this alert</a>.</p>`
+    )
+  );
+}

@@ -35,6 +35,8 @@ export interface PropQuery {
   near?: string | null;
   /** Distance search radius in miles */
   radius?: number | null;
+  /** Only items listed after this ISO timestamp (search alerts) */
+  createdAfter?: string | null;
 }
 
 /** Result of a browse query. `near` is set for distance searches. */
@@ -45,7 +47,7 @@ export interface PropResults {
 }
 
 /** Directus filter for published props matching the query. */
-export function buildPropFilter({ category, categoryIds, search, vendor, loc, vendorIds }: PropQuery) {
+export function buildPropFilter({ category, categoryIds, search, vendor, loc, vendorIds, createdAfter }: PropQuery) {
   const and: Record<string, unknown>[] = [{ status: { _eq: "published" } }];
 
   if (categoryIds?.length) {
@@ -70,6 +72,10 @@ export function buildPropFilter({ category, categoryIds, search, vendor, loc, ve
 
   if (vendor) {
     and.push({ user_created: { _eq: vendor } });
+  }
+
+  if (createdAfter) {
+    and.push({ date_created: { _gt: createdAfter } });
   }
 
   if (vendorIds) {

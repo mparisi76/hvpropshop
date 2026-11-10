@@ -69,7 +69,7 @@ async function lookup(query: string): Promise<(Point & { label: string }) | null
   const place = a.city || a.town || a.village || a.hamlet;
   const state = a.state ? STATE_ABBR[a.state] ?? a.state : "";
   const label = /^\d{5}$/.test(query)
-    ? [query, place].filter(Boolean).join(" · ")
+    ? [query, [place, state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")
     : [place, state].filter(Boolean).join(", ") || hit.display_name.split(",").slice(0, 2).join(",");
   return { lat: Number(hit.lat), lng: Number(hit.lon), label };
 }

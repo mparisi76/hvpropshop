@@ -30,6 +30,10 @@ export default function PrivacyPage() {
             not your full card details.
           </li>
           <li>
+            <strong>Search alerts:</strong> if you ask to be notified when something is listed, your email and that
+            search, until the alert is sent, cancelled or 90 days pass.
+          </li>
+          <li>
             <strong>Vendor accounts:</strong> name, email, phone, shop details, profile photo, logo and listings.
           </li>
           <li>
