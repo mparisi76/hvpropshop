@@ -15,7 +15,7 @@ import { categoryPath, locationPath } from "@/lib/browse";
 import InquiryWrapper from "@/components/inquiry/InquiryWrapper";
 import PullListButton from "@/components/PullListButton";
 import { CARD_FIELDS } from "@/lib/props";
-import { withOptionalField } from "@/lib/fields";
+import { isItemUnavailable, withOptionalField } from "@/lib/fields";
 import RequestButton from "@/components/request/RequestButton";
 import VendorAvatar from "@/components/VendorAvatar";
 import { ChevronRight } from "lucide-react";
@@ -108,13 +108,17 @@ export default async function PropDetail({
     })
   );
   const vendorFields = ["id", "first_name", "last_name", "shop_name", "city", "state"];
+  // Old or unpublished links (e.g. from search engines) are a normal 404, not an error
   const item = await withOptionalField(
     "shop_logo",
     () => loadItem([...vendorFields, "shop_logo"]),
     () => loadItem(vendorFields)
-  );
+  ).catch((error) => {
+    if (isItemUnavailable(error)) return null;
+    throw error;
+  });
 
-  if (!item) return notFound();
+  if (!item) notFound();
 
   // 1. STOCK LOGIC — rentals (bookings + vendor blocks) are private, so read
   // only dates/quantities with the server token

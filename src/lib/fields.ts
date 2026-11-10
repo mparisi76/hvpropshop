@@ -98,3 +98,17 @@ export async function withOptionalFields<T>(
     }
   }
 }
+
+/**
+ * True if Directus refused an item outright rather than one field: it answers
+ * "You don't have permission to access this" (FORBIDDEN) both for items that
+ * don't exist and for items the caller can't see (e.g. unpublished). Treat as
+ * "not found".
+ */
+export function isItemUnavailable(error: unknown) {
+  const first = (error as { errors?: { message?: string; extensions?: { code?: string } }[] })?.errors?.[0];
+  const code = first?.extensions?.code;
+  if (code === "RECORD_NOT_FOUND" || code === "ROUTE_NOT_FOUND") return true;
+  // A field-specific refusal names the field in quotes; an item-level one doesn't
+  return code === "FORBIDDEN" && !/field\s+"/i.test(first?.message ?? "");
+}
