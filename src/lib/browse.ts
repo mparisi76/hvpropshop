@@ -9,6 +9,8 @@ export const SORT_OPTIONS = [
   { value: "price_asc", label: "Price: low to high", sort: ["price", "-date_created"] },
   { value: "price_desc", label: "Price: high to low", sort: ["-price", "-date_created"] },
   { value: "name", label: "Name: A–Z", sort: ["name"] },
+  // Only offered with a "near" search, where it's the default (sorted in code by distance)
+  { value: "nearest", label: "Nearest", sort: ["-date_created"] },
 ] as const;
 
 export type SortValue = (typeof SORT_OPTIONS)[number]["value"];

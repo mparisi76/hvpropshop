@@ -10,6 +10,9 @@ import {
 import { getCheckoutSessionId, stripe } from "@/lib/payments";
 import { addDays, businessDate, businessToday } from "@/lib/site";
 import { sendDuePayouts } from "@/lib/payouts";
+import { revalidateTag } from "next/cache";
+import { backfillVendorCoordinates } from "@/lib/geo";
+import { CATALOG_TAG } from "@/lib/catalog";
 import { reportError } from "@/lib/alerts";
 
 /** Days after acceptance before an unpaid hold is released. */
@@ -113,7 +116,13 @@ export async function runDailyBookingJobs() {
     });
   }
 
-  // 4. Pay vendors for rentals whose return date has passed
+  // 4. Map positions for vendors missing one (distance search)
+  await step("vendor coordinates", async () => {
+    const geo = await backfillVendorCoordinates();
+    if (geo.updated) revalidateTag(CATALOG_TAG, "max");
+  });
+
+  // 5. Pay vendors for rentals whose return date has passed
   await step("payouts", async () => {
     const payouts = await sendDuePayouts();
     summary.payoutsSent += payouts.paid;

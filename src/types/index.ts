@@ -42,6 +42,8 @@ export interface Prop {
   quantity_available: number;
   condition?: string;
   rentals: Rental[];
+  /** Miles from the searched location (distance search only; not stored) */
+  distance?: number;
 }
 
 export interface TreeBranch {

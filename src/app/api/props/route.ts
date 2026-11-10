@@ -12,6 +12,8 @@ export async function GET(request: Request) {
       vendor: searchParams.get("vendor"),
       loc: searchParams.get("loc"),
       sort: searchParams.get("sort"),
+      near: searchParams.get("near"),
+      radius: Number(searchParams.get("radius")) || null,
     });
     return NextResponse.json(items);
   } catch (error) {

@@ -12,6 +12,8 @@ interface PropFeedProps {
   vendor?: string;
   loc?: string;
   sort?: string;
+  near?: string;
+  radius?: number;
   totalCount: number;
 }
 
@@ -22,6 +24,8 @@ export default function PropFeed({
   vendor,
   loc,
   sort,
+  near,
+  radius,
   totalCount,
 }: PropFeedProps) {
   const [items, setItems] = useState<Prop[]>(initialItems);
@@ -43,6 +47,8 @@ export default function PropFeed({
       if (vendor) params.set("vendor", vendor);
       if (loc) params.set("loc", loc);
       if (sort) params.set("sort", sort);
+      if (near) params.set("near", near);
+      if (radius) params.set("radius", String(radius));
       const response = await fetch(`/api/props?${params.toString()}`);
       const nextItems = await response.json();
 

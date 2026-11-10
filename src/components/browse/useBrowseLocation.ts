@@ -14,9 +14,9 @@ export function useBrowseLocation() {
   const match = pathname.match(/^\/rentals\/([^/]+)/);
   const selectedSlug = match ? decodeURIComponent(match[1]) : undefined;
 
-  // Category links keep the location filter and sort (not the search)
+  // Category links keep the location filter, distance search and sort (not the text search)
   const keep = new URLSearchParams();
-  for (const key of ["loc", "sort"]) {
+  for (const key of ["loc", "near", "radius", "sort"]) {
     const value = searchParams.get(key);
     if (value) keep.set(key, value);
   }

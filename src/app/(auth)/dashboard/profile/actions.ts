@@ -6,6 +6,7 @@ import { deleteFile, readMe, uploadFiles, withToken } from "@directus/sdk";
 import directus from "@/lib/directus";
 import { updateMeFields } from "@/lib/directusUser";
 import { getActionToken } from "@/lib/actionSession";
+import { setVendorCoordinates } from "@/lib/geo";
 import { vendorWebsite } from "@/lib/vendors";
 import { Vendor } from "@/types";
 
@@ -51,6 +52,8 @@ export async function updateProfile(
   try {
     const me = await directus.request(withToken(token, readMe({ fields: ["id"] })));
     await directus.request(withToken(token, updateMeFields(update)));
+    // For distance search: look up the town's coordinates (before the catalog cache is cleared)
+    if (me?.id) await setVendorCoordinates(String(me.id), update.city, update.state);
 
     revalidatePath("/dashboard", "layout");
     revalidatePath("/vendors");

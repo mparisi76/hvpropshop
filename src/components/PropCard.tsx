@@ -48,11 +48,18 @@ export default function PropCard({ item }: { item: Prop }) {
               </p>
             )}
           </div>
-          {(vendor || location) && (
+          {(vendor || location || item.distance != null) && (
             <p className="flex items-center gap-1 truncate text-xs text-neutral-500">
               {location && <MapPin className="h-3 w-3 shrink-0" aria-hidden />}
               <span className="truncate">
-                {[vendor, location].filter(Boolean).join(" · ")}
+                {[
+                  // Distance searches show how far away the pickup is
+                  item.distance != null ? `${item.distance < 1 ? "<1" : Math.round(item.distance)} mi` : null,
+                  vendor,
+                  location,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </p>
           )}

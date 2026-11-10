@@ -13,6 +13,7 @@ import { getSiteUrl } from "@/lib/baseUrl";
 import { vendorWebsite } from "@/lib/vendors";
 import { CONTACT_EMAIL } from "@/lib/site";
 import { reportError } from "@/lib/alerts";
+import { setVendorCoordinates } from "@/lib/geo";
 import { deleteVendorEverything, getVendorFootprint, isVendorAccount } from "@/lib/vendorDeletion";
 
 type Result = { error?: string; message?: string };
@@ -135,14 +136,19 @@ export async function approveApplication(id: string): Promise<Result> {
   let roleId: string;
   try {
     roleId = await getVendorRoleId(token);
+    let vendorId: string;
     if (existing) {
       await asAdmin(updateUser(existing.id, profile as unknown as Parameters<typeof updateUser>[1]), token);
+      vendorId = existing.id;
     } else {
-      await asAdmin(
+      const created = await asAdmin<{ id: string }>(
         createUser({ email, role: roleId, status: "invited", ...profile } as unknown as Parameters<typeof createUser>[0]),
         token
       );
+      vendorId = created.id;
     }
+    // For distance search (best effort; the daily job fills in any misses)
+    await setVendorCoordinates(vendorId, app.city, app.state);
   } catch (error) {
     await reportError("Vendor approval: couldn't create the account", error, { application: id, email });
     return { error: `Couldn't create the vendor account, so no invite was sent: ${directusError(error)}` };

@@ -7,7 +7,7 @@ import { categoryPath } from "@/lib/browse";
 import { absoluteUrl, pageMeta } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
-type SearchParams = Promise<{ search?: string; loc?: string; sort?: string }>;
+type SearchParams = Promise<{ search?: string; loc?: string; sort?: string; near?: string; radius?: string }>;
 
 export async function generateMetadata({
   params,
@@ -16,7 +16,7 @@ export async function generateMetadata({
   params: Params;
   searchParams: SearchParams;
 }): Promise<Metadata> {
-  const [{ slug }, { search, loc, sort }] = await Promise.all([params, searchParams]);
+  const [{ slug }, { search, loc, sort, near }] = await Promise.all([params, searchParams]);
   const found = findCategory((await getCatalog()).tree, decodeURIComponent(slug));
   if (!found) return { title: "Category not found | HV Prop Shop", robots: { index: false } };
 
@@ -28,7 +28,7 @@ export async function generateMetadata({
     } ${found.current.count === 1 ? "item" : "items"} available.`,
     path: categoryPath(found.current.slug),
     // Empty categories and filtered views don't belong in search results
-    noindex: found.current.count === 0 || Boolean(search || loc || sort),
+    noindex: found.current.count === 0 || Boolean(search || loc || sort || near),
   });
 }
 
@@ -60,6 +60,8 @@ export default async function CategoryPage({ params, searchParams }: { params: P
         search={query.search}
         loc={query.loc}
         sort={query.sort}
+        near={query.near}
+        radius={Number(query.radius) || undefined}
         title={`${current.name} rentals`}
         intro={
           current.count > 0
