@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { refreshCatalog } from "@/lib/catalog";
-import { inviteUser, readItem, readUsers, updateItem, updateUser } from "@directus/sdk";
+import { createUser, inviteUser, readItem, readUsers, updateItem, updateUser } from "@directus/sdk";
 import { Resend } from "resend";
 import { getActionToken } from "@/lib/actionSession";
 import { getCurrentUser, isAdmin } from "@/lib/currentUser";
@@ -12,6 +12,7 @@ import { cancelBooking } from "@/lib/cancellations";
 import { getSiteUrl } from "@/lib/baseUrl";
 import { vendorWebsite } from "@/lib/vendors";
 import { CONTACT_EMAIL } from "@/lib/site";
+import { reportError } from "@/lib/alerts";
 import { deleteVendorEverything, getVendorFootprint, isVendorAccount } from "@/lib/vendorDeletion";
 
 type Result = { error?: string; message?: string };
@@ -116,51 +117,47 @@ export async function approveApplication(id: string): Promise<Result> {
     };
   }
 
-  // 2. Invite: Directus emails them a link to /accept-invite to choose a password.
-  //    (For someone already invited but not yet signed up, this re-sends the invite.)
+  // 2. Create the account WITH its shop details in one step (or refresh them on a
+  //    not-yet-accepted invite), so the account is the single source of truth and
+  //    a vendor can never be invited with an empty profile.
+  const [first, ...rest] = app.name.trim().split(/\s+/);
+  const profile = {
+    first_name: first || null,
+    last_name: rest.join(" ") || null,
+    shop_name: app.shop_name,
+    city: app.city,
+    state: app.state,
+    phone: app.phone,
+    website: vendorWebsite(app.website)?.href ?? null,
+  };
+  let roleId: string;
   try {
-    const roleId = await getVendorRoleId(token);
+    roleId = await getVendorRoleId(token);
+    if (existing) {
+      await asAdmin(updateUser(existing.id, profile as unknown as Parameters<typeof updateUser>[1]), token);
+    } else {
+      await asAdmin(
+        createUser({ email, role: roleId, status: "invited", ...profile } as unknown as Parameters<typeof createUser>[0]),
+        token
+      );
+    }
+  } catch (error) {
+    await reportError("Vendor approval: couldn't create the account", error, { application: id, email });
+    return { error: `Couldn't create the vendor account, so no invite was sent: ${directusError(error)}` };
+  }
+
+  // 3. Invite: Directus emails a link to /accept-invite to choose a password.
+  //    (For an account in "invited" status it just sends the email.)
+  try {
     await asAdmin(inviteUser(email, roleId, `${await getSiteUrl()}/accept-invite`), token);
   } catch (error) {
-    console.error("[admin] Invite failed:", error);
+    await reportError("Vendor approval: account created but invite email failed", error, { application: id, email });
     const msg = directusError(error);
     return {
       error: /allow ?list|invite url/i.test(msg)
-        ? "Directus rejected the invite link. Add https://hvpropshop.com/accept-invite to USER_INVITE_URL_ALLOW_LIST."
-        : `Invite failed: ${msg}`,
+        ? "The account was created, but Directus rejected the invite link. Add https://hvpropshop.com/accept-invite to USER_INVITE_URL_ALLOW_LIST, then click Resend invite."
+        : `The account was created, but the invite email failed: ${msg}. Fix it, then click Resend invite.`,
     };
-  }
-
-  // 3. Pre-fill the profile, only on the invited (not yet signed up) account
-  try {
-    const invitedCandidates = await asAdmin<{ id: string; email: string }[]>(
-      readUsers({
-        fields: ["id", "email"],
-        filter: { _and: [{ email: { _icontains: email } }, { status: { _eq: "invited" } }] },
-        limit: 20,
-      }),
-      token
-    );
-    const invited = invitedCandidates.find((u) => u.email?.toLowerCase() === email);
-    if (invited) {
-      const [first, ...rest] = app.name.trim().split(/\s+/);
-      await asAdmin(
-        updateUser(invited.id, {
-          first_name: first || null,
-          last_name: rest.join(" ") || null,
-          shop_name: app.shop_name,
-          city: app.city,
-          state: app.state,
-          phone: app.phone,
-          website: vendorWebsite(app.website)?.href ?? null,
-        } as unknown as Parameters<typeof updateUser>[1]),
-        token
-      );
-    } else {
-      console.warn(`[admin] Invited ${email} but couldn't find the invited account to pre-fill`);
-    }
-  } catch (error) {
-    console.warn("[admin] Couldn't pre-fill the new vendor's profile:", error);
   }
 
   await asAdmin(updateItem("vendor_applications", id, { status: "approved" }), token).catch(() => {});
