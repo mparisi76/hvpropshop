@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";

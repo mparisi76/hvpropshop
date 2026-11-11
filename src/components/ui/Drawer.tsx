@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
@@ -24,7 +24,6 @@ export default function Drawer({
   children: React.ReactNode | ((close: () => void) => React.ReactNode);
 }) {
   const [visible, setVisible] = useState(false);
-  const closing = useRef(false);
 
   // Start off-screen, then slide in on the next frame
   useEffect(() => {
@@ -38,9 +37,8 @@ export default function Drawer({
     };
   }, []);
 
+  // Slide out, then unmount. (Closing twice is harmless: the panel is already hidden.)
   const close = useCallback(() => {
-    if (closing.current) return;
-    closing.current = true;
     setVisible(false);
     setTimeout(onClose, DURATION);
   }, [onClose]);
