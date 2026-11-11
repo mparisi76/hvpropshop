@@ -428,3 +428,29 @@ export async function emailSearchAlertMatch(p: {
     )
   );
 }
+
+export async function emailItemAvailable(p: {
+  to: string;
+  item: { id: string | number; name: string; price: number | null; thumbnail: string | null };
+  unsubscribePath: string;
+}) {
+  const base = await getSiteUrl();
+  const url = `${base}/props/${p.item.id}`;
+  return send(
+    p.to,
+    `Available again: ${p.item.name}`,
+    layout(
+      `${p.item.name} is available again`,
+      `${
+        p.item.thumbnail
+          ? `<p><img src="${esc(`${process.env.NEXT_PUBLIC_DIRECTUS_URL}/assets/${p.item.thumbnail}?width=480&height=360&fit=cover&format=jpg`)}" width="240" alt="" style="border-radius:8px;display:block" /></p>`
+          : ""
+      }
+       <p>Good news: the item you were waiting for is back.${p.item.price != null ? ` ${formatMoney(p.item.price)}/day.` : ""}
+       Other productions can request it too, so request your dates soon.</p>
+       ${button(url, "Request to book")}
+       <p style="color:#737373;font-size:12px">This was a one-time alert.
+       <a href="${esc(`${base}${p.unsubscribePath}`)}" style="color:#737373">Cancel this alert</a>.</p>`
+    )
+  );
+}

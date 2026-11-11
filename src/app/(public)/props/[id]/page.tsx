@@ -17,6 +17,7 @@ import PullListButton from "@/components/PullListButton";
 import { CARD_FIELDS } from "@/lib/props";
 import { isItemUnavailable, withOptionalField } from "@/lib/fields";
 import RequestButton from "@/components/request/RequestButton";
+import ItemAlertForm from "@/components/ItemAlertForm";
 import VendorAvatar from "@/components/VendorAvatar";
 import { ChevronRight } from "lucide-react";
 import { vendorName as getVendorName } from "@/lib/vendors";
@@ -135,7 +136,8 @@ export default async function PropDetail({
   const liveQuantity = getLiveAvailability(item.quantity_available, rentals as Rental[]);
 
   const displayAvailability = item.availability || "available";
-  const isOutOfStock = liveQuantity <= 0 || displayAvailability === "sold";
+  const isSold = displayAvailability === "sold";
+  const isOutOfStock = liveQuantity <= 0 || isSold;
 
   // "More from this shop" and "More in {category}" — published only, excluding this item
   const shopId = item.user_created?.id;
@@ -352,12 +354,17 @@ export default async function PropDetail({
               </p>
             </div>
 
+            {/* Out on a job (not sold): offer an email when it's free again (phones and desktop) */}
+            {isOutOfStock && !isSold && <ItemAlertForm propId={String(item.id)} />}
+
             <div className="hidden space-y-2 lg:block">
               {isOutOfStock ? (
                 <div className="space-y-3">
-                  <p className="rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
-                    This item isn&apos;t available right now.
-                  </p>
+                  {isSold && (
+                    <p className="rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600">
+                      This item has been sold and is no longer available.
+                    </p>
+                  )}
                   <Link href={item.category ? categoryPath(item.category.slug) : "/"} className="btn-secondary w-full">
                     Browse similar items
                   </Link>
