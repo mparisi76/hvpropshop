@@ -1,0 +1,78 @@
+# Checks every push and pull request: types, lint and a full production build.
+# If any of these fail, GitHub emails you and marks the commit with a red ✗.
+# On main, once everything passes, it tells Coolify to deploy.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # "Run workflow" button in GitHub → Actions
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Type check, lint & build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Public values (already visible in the site's pages)
+      NEXT_PUBLIC_DIRECTUS_URL: https://admin.hvpropshop.com
+      NEXT_PUBLIC_SITE_URL: https://hvpropshop.com
+      # Placeholders: some modules create their clients when imported, which
+      # fails without a key. The build never sends email or charges cards.
+      RESEND_API_KEY: re_ci_placeholder
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  # Deploys only after every check above passes, so a broken build can never
+  # replace the working site. Requires automatic deploys to be OFF in Coolify.
+  deploy:
+    name: Deploy to Coolify
+    needs: build
+    # Pushes to main and manual runs on main (never pull requests)
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger Coolify deployment
+        env:
+          COOLIFY_DEPLOY_URL: ${{ secrets.COOLIFY_DEPLOY_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          if [ -z "$COOLIFY_DEPLOY_URL" ] || [ -z "$COOLIFY_TOKEN" ]; then
+            echo "::error::Add COOLIFY_DEPLOY_URL and COOLIFY_TOKEN under GitHub → Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --max-time 60 \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            "$COOLIFY_DEPLOY_URL"
+          echo
+          echo "Deployment started. Follow it in Coolify → your app → Deployments."
