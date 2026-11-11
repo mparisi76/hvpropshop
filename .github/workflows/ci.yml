@@ -71,7 +71,9 @@ jobs:
             echo "::error::Add COOLIFY_DEPLOY_URL and COOLIFY_TOKEN under GitHub → Settings → Secrets and variables → Actions"
             exit 1
           fi
+          # Coolify's deploy endpoint takes a POST (newer versions reject GET)
           curl --fail-with-body --silent --show-error --max-time 60 \
+            --request POST \
             --header "Authorization: Bearer $COOLIFY_TOKEN" \
             "$COOLIFY_DEPLOY_URL"
           echo
